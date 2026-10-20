@@ -42,3 +42,5 @@ $('exportSettings').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,
 $('importSettings').onclick=()=>$('importFile').click();
 $('importFile').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>100000)throw Error('Configuration file is too large.');const data=JSON.parse(await file.text());if(![1,2].includes(data.version))throw Error('Unsupported configuration version.');const converted=data.version===1?migrateLegacy(data):null;applyConfig(converted?converted.config:data.config);$('adminError').hidden=false;$('adminError').textContent=converted?'Legacy configuration converted to unavailable agent counts and daily ACW, then applied. Please review the values.':'Configuration imported and applied.';}catch(err){$('adminError').hidden=false;$('adminError').textContent=err.message;}finally{e.target.value='';}};
 buildSliders();buildDays();adminFill();render();
+
+window.addEventListener('pageshow',event=>{if(event.persisted)window.location.replace('/');});

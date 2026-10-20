@@ -13,3 +13,8 @@ Available agents = max(0, scheduled agents - shrinkage headcount). Call-handling
 
 ## Reserve support
 Support HC represents reserve agents who handle calls. The default reserve contribution is 100%, using the same AHT and daily ACW as other available agents. Existing configurations without the reserve-support version flag upgrade a previous 0% contribution to 100%; positive custom percentages are retained. Once upgraded, an explicitly configured 0% is respected and explained in the UI. Reserve agents contribute to team capacity, weekday coverage, and the scheduled-handler average; reverse planning includes reserve equivalents in the calls target.
+
+## PIN on every page opening
+A correct PIN issues a short-lived page-entry grant bound to a signed asset session. The entry grant is cleared when the calculator document opens. Opening or refreshing the document without a fresh entry grant returns the PIN page and clears the asset session; inputs and settings remain browser-local. Restoring a page from browser history also returns to the PIN screen. There is no persistent document unlock.
+
+Reserve-support configuration version 2 converts saved 0% reserve contributions from earlier releases to 100% once, retaining the user's other settings.

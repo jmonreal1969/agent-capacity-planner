@@ -21,3 +21,5 @@ const noReserveSolution=solve(v,c,60,4800,'aht'),reserveSolution=solve(v,reserve
 console.log('Reserve support checks passed: full contribution, additional capacity, reserve-only coverage, saved config upgrade, explicit overrides, and reverse staffing.');
 const reserveMetrics=metrics(v,reserveConfig);assert.equal(reserveMetrics.per,5712/88);assert.ok(reserveMetrics.per>metrics({...v,support:0},reserveConfig).per);assert.equal(metrics({...v,agents:0,shrink:0,support:8},reserveConfig).per,84);
 const fullPoolSolve=solve(v,reserveConfig,60,4800,'aht');assert.ok(Math.abs(metrics(fullPoolSolve.values,reserveConfig).per-60)<.2);
+
+assert.equal(upgradeSupportConfig({...defaults,supportModelVersion:1,contribution:0}).contribution,100);

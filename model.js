@@ -1,4 +1,4 @@
-export const defaults={shift:8.5,contribution:100,supportModelVersion:1,ratio:10,acwLimit:90,dayMax:15000,dayStep:100,days:[7500,6800,6500,6200,5500],limits:{agents:[0,100,1,80],support:[0,100,1,8],shrink:[0,50,1,20],aht:[0,3000,1,300],acw:[0,10800,1,5400],calls:[0,150,1,60]}};
+export const defaults={shift:8.5,contribution:100,supportModelVersion:2,ratio:10,acwLimit:90,dayMax:15000,dayStep:100,days:[7500,6800,6500,6200,5500],limits:{agents:[0,100,1,80],support:[0,100,1,8],shrink:[0,50,1,20],aht:[0,3000,1,300],acw:[0,10800,1,5400],calls:[0,150,1,60]}};
 export const keys=['agents','support','shrink','aht','acw','calls'];
 export function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
 export function snap(x,lim,up=false){return clamp(lim[0]+(up?Math.ceil:Math.round)((x-lim[0])/lim[2]-(up?1e-10:0))*lim[2],lim[0],lim[1]);}
@@ -33,4 +33,4 @@ const oldDefaults=Object.fromEntries(keys.map(k=>[k,old.limits[k][3]])),newDefau
 const values=convert(data.values&&keys.every(k=>Number.isFinite(data.values[k]))?data.values:oldDefaults);
 return {config,values,notice:'Saved settings converted: shrinkage is now unavailable agent headcount; ACW is now a daily total. Please review the converted values.'};}
 
-export function upgradeSupportConfig(config){if(config.supportModelVersion===1)return config;return {...config,contribution:config.contribution===0||config.contribution===undefined?100:config.contribution,supportModelVersion:1};}
+export function upgradeSupportConfig(config){if(config.supportModelVersion===2)return config;return {...config,contribution:config.contribution===0||config.contribution===undefined?100:config.contribution,supportModelVersion:1};}
