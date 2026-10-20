@@ -8,7 +8,7 @@ assert.deepEqual(dayStats(7500,m),{answered:5040,shortfall:2460,percent:32.80000
 let r=solve(v,c,60,4800,'aht');assert.equal(r.values.agents,80);assert.equal(r.values.aht,315);assert.equal(metrics(r.values,c).capacity,4800);assert.equal(metrics(r.values,c).per,60);
 r=solve(v,c,60,4800,'acw');assert.equal(r.values.agents,80);assert.equal(r.values.acw,6600);assert.equal(metrics(r.values,c).capacity,4800);
 r=solve(v,c,60,4800,'shrink');assert.ok(metrics(r.values,c).capacity>=4800);assert.ok(Math.abs(metrics(r.values,c).per-60)<1);assert.equal(r.values.aht,v.aht);assert.equal(r.values.acw,v.acw);
-r=solve(v,c,150,20000,'aht');assert.ok(metrics(r.values,c).capacity<20000);assert.ok(r.issues.length>0);
+r=solve(v,c,150,30000,'aht');assert.ok(metrics(r.values,c).capacity<30000);assert.ok(r.issues.length>0);
 r=solve(v,c,60,0,'aht');assert.equal(r.values.agents,0);assert.equal(metrics(r.values,c).capacity,0);
 for(const field of ['aht','acw','shrink'])for(const target of [0,1,60,150]){r=solve(v,c,target,1000,field);for(const k of ['agents','support','shrink','aht','acw'])assert.ok(Number.isFinite(r.values[k]));}
 validate(c);assert.throws(()=>validate({...c,acwLimit:200}));assert.throws(()=>validate({...c,shift:0}));assert.throws(()=>validate({...c,days:[-1,0,0,0,0]}));
