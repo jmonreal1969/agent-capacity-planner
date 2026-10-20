@@ -2,26 +2,26 @@ export const defaults={shift:8.5,contribution:100,supportModelVersion:2,agentLim
 export const keys=['agents','support','shrink','aht','acw','calls'];
 export function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
 export function snap(x,lim,up=false){return clamp(lim[0]+(up?Math.ceil:Math.round)((x-lim[0])/lim[2]-(up?1e-10:0))*lim[2],lim[0],lim[1]);}
-export function metrics(v,c){const productive=Math.max(0,c.shift*3600-v.acw),available=Math.max(0,v.agents-v.shrink),reserve=v.support*c.contribution/100,scheduled=v.agents+reserve,fte=available+reserve,valid=v.aht>0,activePer=valid?productive/v.aht:0,per=scheduled>0?activePer*fte/scheduled:0;return {valid,productive,available,reserve,scheduled,activePer,per,fte,capacity:valid?Math.floor(activePer*fte+1e-9):0};}
-export function solve(v,c,target,demand,field){const issues=[];if(demand===0){const values={...v,agents:c.limits.agents[0],support:c.limits.support[0],shrink:c.limits.shrink[0]};return {values,issues:['No staffing is required for zero demand. The calls target applies when agents are scheduled.']};}
+export function metrics(v,c){const productive=Math.max(0,c.shift*3600-v.acw),available=Math.max(0,v.agents-v.shrink),reserve=v.support*c.contribution/100,scheduled=v.agents+reserve,fte=available+reserve,valid=v.aht>0,activePer=valid?productive/v.aht:0,per=activePer;return {valid,productive,available,reserve,scheduled,activePer,per,fte,capacity:valid?Math.floor(activePer*fte+1e-9):0};}
+export function solve(v,c,target,demand,field){const issues=[];if(!['aht','acw'].includes(field))field='aht';
 let preferred=null,fallback=null;
 for(let a=c.limits.agents[0];a<=c.limits.agents[1]+1e-9;a+=c.limits.agents[2]){
- const out={...v,agents:a,support:snap(c.ratio>0?Math.ceil(a/c.ratio):0,c.limits.support,true)},reserve=out.support*c.contribution/100,scheduled=a+reserve,available=Math.max(0,a-v.shrink)+reserve,shift=c.shift*3600;
+ const out={...v,agents:a,support:snap(c.ratio>0?Math.ceil(a/c.ratio):0,c.limits.support,true)},shift=c.shift*3600;
  let wanted=NaN;
- if(field==='aht'&&target>0&&scheduled>0&&available>0)wanted=(shift-v.acw)*available/(scheduled*target);
- if(field==='acw'&&scheduled>0&&available>0)wanted=shift-target*scheduled*v.aht/available;
- if(field==='shrink'){const q=v.aht>0?Math.max(0,shift-v.acw)/v.aht:0;if(q>0)wanted=scheduled*(1-target/q);}
- const bounded=Number.isFinite(wanted)&&wanted>=c.limits[field][0]&&wanted<=c.limits[field][1]&&(field!=='shrink'||wanted<=a);
+ if(field==='aht'&&target>0)wanted=Math.max(0,shift-v.acw)/target;
+ if(field==='acw')wanted=shift-target*v.aht;
+ const bounded=Number.isFinite(wanted)&&wanted>=c.limits[field][0]&&wanted<=c.limits[field][1];
  if(Number.isFinite(wanted))out[field]=snap(wanted,c.limits[field]);
  const m=metrics(out,c),candidate={values:out,m,bounded,error:Math.abs(m.per-target)};
  if(m.capacity>=demand&&m.valid&&bounded){preferred=candidate;break;}
  if(!fallback||(m.capacity>=demand&&fallback.m.capacity<demand)||(m.capacity>=demand&&fallback.m.capacity>=demand&&candidate.error<fallback.error-1e-9)||(m.capacity<demand&&fallback.m.capacity<demand&&m.capacity>fallback.m.capacity))fallback=candidate;
 }
 const chosen=preferred||fallback||{values:{...v},m:metrics(v,c),bounded:false},out=chosen.values,m=chosen.m;
+if(demand===0)issues.push('No staffing is required for zero demand. The displayed calls per available agent show potential productivity.');
 if(!m.valid)issues.push('Enter an AHT greater than zero.');
 if(!chosen.bounded)issues.push('The calls target cannot be reached within the selected productivity limits.');
 if(m.capacity<demand)issues.push('Demand exceeds available staffing at these settings.');
-if(Math.abs(m.per-target)>.15)issues.push('Achievable calls per scheduled handler differ from the target; see the actual result.');
+if(Math.abs(m.per-target)>.15)issues.push('Achievable calls per available agent differ from the target; see the actual result.');
 return {values:out,issues};}
 export function dayStats(demand,m){const answered=Math.min(demand,m.capacity),shortfall=Math.max(0,demand-answered);return {answered,shortfall,percent:demand?shortfall/demand*100:0,coverage:demand?answered/demand*100:100};}
 export function validate(c){if(!c||!Number.isFinite(c.shift)||c.shift<=0||c.shift>24)throw Error('Shift must be greater than 0 and at most 24 hours.');if(!Number.isFinite(c.contribution)||c.contribution<0||c.contribution>100||!Number.isFinite(c.ratio)||c.ratio<0)throw Error('Check support contribution and staffing ratio.');if(!Number.isInteger(c.dayMax)||c.dayMax<1||c.dayMax>10000000||!Number.isInteger(c.dayStep)||c.dayStep<1||c.dayStep>c.dayMax)throw Error('Check daily call range and step.');for(const k of keys){const l=c.limits?.[k];if(!Array.isArray(l)||l.length!==4||l.some(x=>!Number.isFinite(x))||l[0]<0||l[1]<=l[0]||l[2]<=0||l[2]>l[1]-l[0]||l[3]<l[0]||l[3]>l[1]||!l.every(Number.isInteger))throw Error('Check '+k+' limits: use whole numbers, min < max, and a valid step/default.');if(l[1]>(k==='aht'||k==='acw'?86400:10000))throw Error('Slider maximum is outside the allowed range.');}
