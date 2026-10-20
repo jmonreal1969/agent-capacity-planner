@@ -1,1 +1,1 @@
-{"name":"agent-capacity-planner","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node model.test.js"}}
+{"name":"agent-capacity-planner","version":"1.1.0","private":true,"type":"module","scripts":{"test":"node --test model.test.js auth.test.js"}}
