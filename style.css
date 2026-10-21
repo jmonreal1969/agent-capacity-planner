@@ -122,7 +122,7 @@
 /* Shared home navigation and Campaign planning. */
 .home-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #campaign{min-width:0}
-.campaign-sliders{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:0;margin:0 -8px}
+.campaign-sliders{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:0;margin:0 -8px}
 .campaign-slider{position:relative;min-width:0;text-align:center;border-right:1px solid var(--line);padding:8px 8px 12px}
 .campaign-slider:last-child{border:0}
 .campaign-slider .n{font-size:8px;letter-spacing:.8px;color:var(--muted)}
@@ -180,7 +180,7 @@
 }
 @media(max-width:1199px){.campaign-sliders{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.campaign-slider:nth-child(4){border-right:0}}
 @media(max-width:720px){.home-actions{justify-content:flex-end;gap:5px}.intro{gap:10px}.intro .home-actions .secondary{font-size:9px;padding:7px}.campaign-sliders{grid-template-columns:repeat(2,minmax(0,1fr))}.campaign-slider:nth-child(even){border-right:0}.campaign-days{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.campaign-day{padding:12px}.campaign-day:last-child{grid-column:1/-1}.campaign-day dl>div{flex-wrap:wrap}.campaign-admin .settings-grid{gap:12px}}
-@media print{.home-actions,#campaign .campaign-day-choice,#campaignReset{display:none}.campaign-sliders{grid-template-columns:repeat(8,minmax(0,1fr))}.campaign-days{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media print{.home-actions,#campaign .campaign-day-choice,#campaignReset{display:none}.campaign-sliders{grid-template-columns:repeat(9,minmax(0,1fr))}.campaign-days{grid-template-columns:repeat(5,minmax(0,1fr))}}
 /* Keep Campaign results readable in the same viewport as its scenarios. */
 #campaign .summary{padding:14px 0;margin-bottom:14px}
 #campaign .summary article{line-height:1.2}
