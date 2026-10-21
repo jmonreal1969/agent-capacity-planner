@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks} from './model.js';
+import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults} from './model.js';
 const c={...structuredClone(defaults),contribution:0},v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
 let m=metrics(v,c);assert.equal(m.productive,25200);assert.equal(m.available,60);assert.equal(m.activePer,84);assert.equal(m.per,84);assert.equal(m.capacity,5040);
 assert.equal(metrics({...v,shrink:0},c).capacity,6720);assert.equal(metrics({...v,acw:0},c).capacity,6120);assert.equal(metrics({...v,acw:10800},c).capacity,3960);
@@ -33,3 +33,8 @@ assert.throws(()=>validate({...custom,benchmarks:{...custom.benchmarks,ahtCurren
 assert.throws(()=>validate({...custom,benchmarks:{...custom.benchmarks,agents:120}}));
 const offStep=structuredClone(custom);offStep.limits.aht[2]=5;offStep.benchmarks.ahtCurrent=321;assert.throws(()=>validate(offStep));
 console.log('Editable benchmark defaults, upgrade, custom preservation, range and step validation passed.');
+
+assert.deepEqual(defaults.limits.aht,[180,420,1,330]);assert.deepEqual(defaults.limits.acw,[3600,10800,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
+const previousDefaults=structuredClone(defaults);delete previousDefaults.operatingDefaultsVersion;previousDefaults.limits.aht=[0,600,1,300];previousDefaults.limits.acw=[0,10800,1,5400];previousDefaults.limits.support[3]=8;previousDefaults.limits.shrink[3]=20;
+const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[180,420,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,10800,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
+console.log('Narrow time ranges, red-benchmark defaults and zero staffing adjustments passed.');
