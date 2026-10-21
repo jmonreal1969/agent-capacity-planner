@@ -13,7 +13,7 @@ r=solve(v,c,60,0,'aht');assert.equal(r.values.agents,0);assert.equal(metrics(r.v
 for(const field of ['aht','acw','shrink'])for(const target of [0,1,60,150]){r=solve(v,c,target,1000,field);for(const k of ['agents','support','shrink','aht','acw'])assert.ok(Number.isFinite(r.values[k]));}
 validate(c);assert.throws(()=>validate({...c,acwLimit:200}));assert.throws(()=>validate({...c,shift:0}));assert.throws(()=>validate({...c,days:[-1,0,0,0,0]}));
 const old=structuredClone(c);delete old.acwLimit;old.limits.shrink=[0,100,1,25];old.limits.acw=[0,3000,1,60];const migrated=migrateLegacy({config:old,values:{...v,shrink:25,acw:60}});
-assert.equal(migrated.values.shrink,20);assert.equal(migrated.values.acw,5100);assert.equal(migrated.config.limits.shrink[1],50);assert.equal(migrated.config.limits.acw[1],10800);assert.equal(metrics(migrated.values,migrated.config).capacity,5100);
+assert.equal(migrated.values.shrink,20);assert.equal(migrated.values.acw,5100);assert.equal(migrated.config.limits.shrink[1],50);assert.equal(migrated.config.limits.acw[1],9000);assert.equal(metrics(migrated.values,migrated.config).capacity,5100);
 console.log('Capacity v2 checks passed: unavailable headcount, daily ACW, reverse planning, limits, and legacy conversion.');
 assert.equal(defaults.contribution,100);const reserveConfig=structuredClone(defaults);assert.equal(metrics(v,reserveConfig).capacity,5712);assert.equal(metrics({...v,support:0},reserveConfig).capacity,5040);assert.equal(metrics({...v,support:1},reserveConfig).capacity,5124);assert.equal(metrics({...v,agents:0,shrink:0,support:8},reserveConfig).capacity,672);
 const legacySupport={...reserveConfig,contribution:0};delete legacySupport.supportModelVersion;const upgraded=upgradeSupportConfig(legacySupport);assert.equal(upgraded.contribution,100);assert.equal(legacySupport.contribution,0);assert.equal(upgradeSupportConfig({...legacySupport,contribution:50}).contribution,50);assert.equal(upgradeSupportConfig({...reserveConfig,contribution:0}).contribution,0);
@@ -34,11 +34,15 @@ assert.throws(()=>validate({...custom,benchmarks:{...custom.benchmarks,agents:12
 const offStep=structuredClone(custom);offStep.limits.aht[2]=5;offStep.benchmarks.ahtCurrent=321;assert.throws(()=>validate(offStep));
 console.log('Editable benchmark defaults, upgrade, custom preservation, range and step validation passed.');
 
-assert.deepEqual(defaults.limits.aht,[240,360,1,330]);assert.deepEqual(defaults.limits.acw,[3600,10800,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
-const previousDefaults=structuredClone(defaults);delete previousDefaults.operatingDefaultsVersion;previousDefaults.limits.aht=[0,600,1,300];previousDefaults.limits.acw=[0,10800,1,5400];previousDefaults.limits.support[3]=8;previousDefaults.limits.shrink[3]=20;
-const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[240,360,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,10800,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
+assert.deepEqual(defaults.limits.aht,[240,360,1,330]);assert.deepEqual(defaults.limits.acw,[3600,9000,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
+const previousDefaults=structuredClone(defaults);delete previousDefaults.operatingDefaultsVersion;delete previousDefaults.acwRangeVersion;previousDefaults.limits.aht=[0,600,1,300];previousDefaults.limits.acw=[0,10800,1,5400];previousDefaults.limits.support[3]=8;previousDefaults.limits.shrink[3]=20;
+const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[240,360,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,9000,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
 console.log('Narrow time ranges, red-benchmark defaults and zero staffing adjustments passed.');
 
 const previousRange=structuredClone(defaults);previousRange.operatingDefaultsVersion=1;previousRange.limits.aht=[180,420,1,330];previousRange.limits.support[3]=12;previousRange.limits.shrink[3]=5;
 const latestRange=upgradeOperatingDefaults(previousRange);validate(latestRange);assert.deepEqual(latestRange.limits.aht,[240,360,1,330]);assert.equal(latestRange.limits.support[3],12);assert.equal(latestRange.limits.shrink[3],5);assert.deepEqual(latestRange.limits.acw,previousRange.limits.acw);assert.equal(previousRange.limits.aht[0],180);
 console.log('AHT 4–6 minute range migration preserves other settings.');
+
+const oldAcwRange=structuredClone(defaults);delete oldAcwRange.acwRangeVersion;oldAcwRange.limits.acw=[3600,10800,1,7200];oldAcwRange.limits.support[3]=9;
+const newAcwRange=upgradeOperatingDefaults(oldAcwRange);validate(newAcwRange);assert.deepEqual(newAcwRange.limits.acw,[3600,9000,1,7200]);assert.deepEqual(newAcwRange.limits.aht,oldAcwRange.limits.aht);assert.equal(newAcwRange.limits.support[3],9);assert.equal(oldAcwRange.limits.acw[1],10800);assert.equal(upgradeOperatingDefaults(newAcwRange),newAcwRange);
+console.log('ACW 60–150 minute range migration preserves other settings.');
