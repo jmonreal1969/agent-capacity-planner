@@ -54,3 +54,49 @@
   #calculator>.method{padding:9px 16px}
   footer{margin:10px 0}
 }
+
+
+/* Wide desktop: compare the scenario and all five weekdays side by side. */
+@media screen and (min-width:1700px){
+  main{max-width:2560px;padding:24px 2.5% 20px}
+  #calculator{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);column-gap:20px;align-items:stretch}
+  #calculator>.summary,#calculator>.method{grid-column:1/-1}
+  #calculator>.controls,#calculator>.weekdays{min-width:0;padding:20px;margin-bottom:20px}
+  #calculator .section-head{min-height:56px;margin-bottom:20px}
+  #calculator h2{font-size:19px}
+  #calculator .section-head .eyebrow{display:block}
+  #calculator .section-head p{display:block;font-size:11px}
+  .sliders{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(150px,1.12fr);margin:0 -6px}
+  .slider-card{padding:8px 7px 20px}
+  .slider-card:last-child{margin-left:8px}
+  .slider-card .n{display:inline;font-size:8px}
+  .slider-card h3{font-size:12px;margin-top:7px}
+  .slider-card .desc{height:30px;font-size:10px;line-height:1.3;margin-top:2px}
+  .value{font-size:30px;margin:8px 0 4px}
+  .value-unit{font-size:8px}
+  .track-area{height:clamp(140px,calc(100vh - 650px),230px);margin:14px auto}
+  .vertical,.scale{height:100%}
+  .output .track-area{height:clamp(116px,calc(100vh - 674px),206px);margin:10px auto}
+  .output .vertical,.output .scale{height:100%}
+  .output .value{margin-top:8px}
+  .mode-toggle{width:134px;margin-bottom:4px;padding:3px}
+  .mode-toggle button{padding:5px 8px}
+  .reverse{grid-template-columns:minmax(0,1fr) 175px 120px;gap:15px;margin-top:18px;padding-top:15px}
+  .reverse p{font-size:11px;line-height:1.4}
+  .weekdays .section-head{align-items:flex-start}
+  .weekdays .check{max-width:175px;font-size:10px}
+  .days{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+  .day{display:block;padding:14px 9px;line-height:1.5}
+  .day-heading{flex-wrap:wrap;gap:3px}
+  .day-heading button{font-size:11px}
+  .day-volume{font-size:26px;line-height:1.2;margin:14px 0 0}
+  .day>small{display:block}
+  .battery-row{margin:27px 0 20px;gap:8px}
+  .battery{height:clamp(130px,calc(100vh - 670px),220px);width:44px;padding:3px;border-radius:7px}
+  .battery:before{width:20px;left:10px}
+  .day-range{height:clamp(130px,calc(100vh - 670px),220px);width:20px}
+  .day-stats{padding-top:10px;gap:6px;font-size:10px;line-height:1.4}
+  .day-stats>div{flex-wrap:wrap}
+  .legend{flex-wrap:wrap;gap:10px 15px;margin-top:18px;font-size:10px}
+  .legend span:last-child{width:100%;margin-left:0}
+}
