@@ -357,7 +357,7 @@ body[data-dashboard="campaign"] .intro{display:none}
 .campaign-forward .campaign-day{display:grid;grid-template-columns:minmax(62px,.8fr) minmax(0,1.2fr);column-gap:14px;row-gap:8px;align-items:start;padding:14px}
 .campaign-forward .campaign-day>button{grid-column:1/-1;justify-self:start;text-align:left;font-size:15px;font-weight:700;line-height:1.2;padding:3px 0}
 .campaign-forward .campaign-day.selected{border-color:#0078d4;box-shadow:0 0 0 2px #e6f2fc}
-.campaign-forward .campaign-day.selected>button{color:#0067b8}
+.campaign-forward .campaign-day.selected>button{color:var(--ink)}
 .campaign-forward .campaign-battery-wrap{grid-column:1;grid-row:2;margin:9px 0 0;gap:8px}
 .campaign-forward .campaign-staff-battery{height:174px;width:62px;padding:4px;border-radius:8px}
 .campaign-forward .campaign-staff-battery:before{width:24px;left:50%;transform:translateX(-50%)}
