@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign} from './campaign-model.js';
+import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign,scaleCampaignDemand,campaignStaffingBattery} from './campaign-model.js';
 import {defaults} from './model.js';
 const near=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol, a+' ≠ '+b);
 assert.deepEqual(campaignCounts(7500,8),{queued:7500,abandoned:600,handled:6900});
@@ -51,3 +51,13 @@ for(const cfg of [{lambda:1,aht:1,patience:1,agents:1,T:.5},{lambda:7500/30600,a
 }
 console.log('Campaign checks passed: flow balance, analytic cases, independent queue simulation, minimal staffing, linked totals, constraints and edge cases.');
 
+
+assert.deepEqual(scaleCampaignDemand([7500,6800,6500,6200,5500],0,9000,15000),[9000,8160,7800,7440,6600]);
+assert.deepEqual(scaleCampaignDemand([0,0,0,0,0],0,1000,15000),[1000,1000,1000,1000,1000]);
+assert.deepEqual(scaleCampaignDemand([7500,6800,6500,6200,5500],0,0,15000),[0,0,0,0,0]);
+assert.deepEqual(scaleCampaignDemand([7500,6800,6500,6200,5500],4,15000,15000),[15000,15000,15000,15000,15000]);
+const coveredBattery=campaignStaffingBattery(102,121);near(coveredBattery.green,102/121);assert.equal(coveredBattery.red,0);assert.equal(coveredBattery.spare,19);
+assert(campaignStaffingBattery(90,121).green<coveredBattery.green);
+const gapBattery=campaignStaffingBattery(102,50);near(gapBattery.green,50/102);near(gapBattery.red,52/102);assert.equal(gapBattery.additional,52);
+assert.equal(campaignStaffingBattery(0,121).empty,true);assert.equal(campaignStaffingBattery(null,121).empty,true);assert.equal(campaignStaffingBattery(100,0).red,1);
+console.log('Week-wide demand scaling and responsive staffing battery checks passed.');

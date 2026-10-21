@@ -64,3 +64,6 @@ export function planCampaign({queued,aht,config,values,agentConfig,agentValues})
     return {target,feasible:true,active:lo,headcount,gap:headcount-agentValues.agents,stats,availability,modeled:{abandoned,handled:queued-abandoned}};
   }catch(e){return {target,feasible:false,active:null,headcount:null,reason:e.message};}
 }
+
+export function scaleCampaignDemand(days,selected,queued,max){const anchor=days[selected];return days.map((d,i)=>i===selected?Math.round(clamp(queued,0,max)):Math.round(clamp(anchor>0?d*queued/anchor:queued,0,max)));}
+export function campaignStaffingBattery(required,current){if(!Number.isFinite(required)||required<0)return {green:0,red:0,covered:0,additional:0,spare:0,empty:true,numberOnEmpty:true};const covered=Math.min(required,current),additional=Math.max(0,required-current),spare=Math.max(0,current-required),scale=Math.max(required,current,1),green=covered/scale,red=additional/scale;return {green,red,covered,additional,spare,empty:required===0,numberOnEmpty:green+red<.5};}
