@@ -3,7 +3,7 @@
 // with Impatient Customers. All rates below use seconds.
 const copy=x=>JSON.parse(JSON.stringify(x));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export const campaignDefaults={version:1,abandonRangeVersion:1,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
+export const campaignDefaults={version:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
 export function validateCampaignState(data){
   if(!data||data.version!==1||!data.config||!data.values)throw Error('Unsupported Campaign backup.');
   const c=data.config;
@@ -15,6 +15,8 @@ export function validateCampaignState(data){
   if(!Number.isInteger(data.day)||data.day<0||data.day>4)throw Error('Check the Campaign weekday.');
   const next=copy(data);
   if(next.config.abandonRangeVersion!==1){next.config.abandonRangeVersion=1;next.config.limits.abandonRate=[0,20,.1,clamp(next.config.limits.abandonRate[3],0,20)];next.values.abandonRate=clamp(next.values.abandonRate,0,20);}
+  if(next.config.benchmarks===undefined)next.config.benchmarks={serviceTarget:75,abandonRate:3};
+  for(const k of ['serviceTarget','abandonRate'])if(!Number.isFinite(next.config.benchmarks?.[k])||next.config.benchmarks[k]<0||next.config.benchmarks[k]>100)throw Error('Check Campaign '+k+' benchmark.');
   return next;
 }
 export function campaignInitial(config=campaignDefaults){return {version:1,config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}

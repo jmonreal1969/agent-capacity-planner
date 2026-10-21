@@ -67,3 +67,7 @@ const oldPercent=campaignInitial();delete oldPercent.config.abandonRangeVersion;
 const newPercent=validateCampaignState(oldPercent);assert.deepEqual(newPercent.config.limits.abandonRate,[0,20,.1,20]);assert.equal(newPercent.values.abandonRate,20);assert.equal(oldPercent.values.abandonRate,40);
 const editedPercent=structuredClone(newPercent);editedPercent.config.limits.abandonRate=[0,15,.1,3];editedPercent.values.abandonRate=3;assert.deepEqual(validateCampaignState(editedPercent),editedPercent);
 console.log('Abandonment defaults and saved ranges migrate to 0–20% once; later Admin edits persist.');
+
+const oldBenchmarks=campaignInitial();delete oldBenchmarks.config.benchmarks;const migratedBenchmarks=validateCampaignState(oldBenchmarks);assert.deepEqual(migratedBenchmarks.config.benchmarks,{serviceTarget:75,abandonRate:3});assert.equal(oldBenchmarks.config.benchmarks,undefined);
+const customBenchmarks=structuredClone(migratedBenchmarks);customBenchmarks.config.benchmarks={serviceTarget:80,abandonRate:2};assert.deepEqual(validateCampaignState(customBenchmarks).config.benchmarks,customBenchmarks.config.benchmarks);assert.throws(()=>validateCampaignState({...customBenchmarks,config:{...customBenchmarks.config,benchmarks:{serviceTarget:-1,abandonRate:3}}}));
+console.log('Campaign goal benchmarks migrate, preserve Admin edits and reject invalid backups.');

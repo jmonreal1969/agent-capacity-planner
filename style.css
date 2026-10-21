@@ -303,3 +303,12 @@ body[data-dashboard="campaign"] .intro{display:none}
 /* Campaign reference lines remain clickable beside and across the slider. */
 .campaign-slider .campaign-benchmark{left:calc(50% - 32px);width:64px}
 .campaign-input-unit .benchmark-shortcut{font-size:8px;line-height:10px;padding:0;white-space:nowrap}
+
+/* Campaign goals are blue; current operating times are red. */
+.campaign-benchmark-goal{color:#0067b8}
+.campaign-benchmark-current{color:#bc4137}
+.campaign-slider .campaign-benchmark-goal:before{border-color:#0078d4}
+.campaign-slider .campaign-benchmark-current:before{border-color:#cf5146}
+.campaign-slider .campaign-benchmark-pair.campaign-benchmark-goal{left:calc(50% - 36px);width:36px}
+.campaign-slider .campaign-benchmark-pair.campaign-benchmark-current{left:50%;width:36px}
+.campaign-slider .campaign-input-unit{display:flex;justify-content:center;gap:6px}
