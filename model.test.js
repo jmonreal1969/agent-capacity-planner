@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults} from './model.js';
+import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults,upgradeCurrentTimes} from './model.js';
 const c={...structuredClone(defaults),contribution:0};c.limits.aht=[180,420,1,330];const v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
 let m=metrics(v,c);assert.equal(m.productive,25200);assert.equal(m.available,60);assert.equal(m.activePer,84);assert.equal(m.per,84);assert.equal(m.capacity,5040);
 assert.equal(metrics({...v,shrink:0},c).capacity,6720);assert.equal(metrics({...v,acw:0},c).capacity,6120);assert.equal(metrics({...v,acw:10800},c).capacity,3960);
@@ -25,7 +25,7 @@ const fullPoolSolve=solve(v,reserveConfig,84,4800,'aht');assert.ok(Math.abs(metr
 assert.equal(upgradeSupportConfig({...defaults,supportModelVersion:1,contribution:0}).contribution,100);
 
 assert.equal(defaults.limits.agents[3],121);
-assert.deepEqual(defaults.benchmarks,{agents:121,acwGoal:5400,acwCurrent:7200,ahtGoal:300,ahtCurrent:330});
+assert.deepEqual(defaults.benchmarks,{agents:121,acwGoal:5400,acwCurrent:7200,ahtGoal:300,ahtCurrent:338});
 const preBenchmarks=structuredClone(defaults);delete preBenchmarks.benchmarks;delete preBenchmarks.benchmarkVersion;preBenchmarks.limits.agents[3]=80;
 const withBenchmarks=upgradeBenchmarks(preBenchmarks);validate(withBenchmarks);assert.equal(withBenchmarks.limits.agents[3],121);assert.equal(preBenchmarks.limits.agents[3],80);
 const custom=structuredClone(defaults);custom.benchmarks.agents=117;custom.limits.agents[3]=117;custom.benchmarks.ahtCurrent=320;validate(custom);assert.equal(upgradeBenchmarks(custom),custom);
@@ -34,15 +34,18 @@ assert.throws(()=>validate({...custom,benchmarks:{...custom.benchmarks,agents:12
 const offStep=structuredClone(custom);offStep.limits.aht[2]=5;offStep.benchmarks.ahtCurrent=321;assert.throws(()=>validate(offStep));
 console.log('Editable benchmark defaults, upgrade, custom preservation, range and step validation passed.');
 
-assert.deepEqual(defaults.limits.aht,[240,360,1,330]);assert.deepEqual(defaults.limits.acw,[3600,9000,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
+assert.deepEqual(defaults.limits.aht,[240,360,1,338]);assert.deepEqual(defaults.limits.acw,[3600,9000,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
 const previousDefaults=structuredClone(defaults);delete previousDefaults.operatingDefaultsVersion;delete previousDefaults.acwRangeVersion;previousDefaults.limits.aht=[0,600,1,300];previousDefaults.limits.acw=[0,10800,1,5400];previousDefaults.limits.support[3]=8;previousDefaults.limits.shrink[3]=20;
-const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[240,360,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,9000,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
+const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[240,360,1,338]);assert.deepEqual(narrowed.limits.acw,[3600,9000,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
 console.log('Narrow time ranges, red-benchmark defaults and zero staffing adjustments passed.');
 
 const previousRange=structuredClone(defaults);previousRange.operatingDefaultsVersion=1;previousRange.limits.aht=[180,420,1,330];previousRange.limits.support[3]=12;previousRange.limits.shrink[3]=5;
-const latestRange=upgradeOperatingDefaults(previousRange);validate(latestRange);assert.deepEqual(latestRange.limits.aht,[240,360,1,330]);assert.equal(latestRange.limits.support[3],12);assert.equal(latestRange.limits.shrink[3],5);assert.deepEqual(latestRange.limits.acw,previousRange.limits.acw);assert.equal(previousRange.limits.aht[0],180);
+const latestRange=upgradeOperatingDefaults(previousRange);validate(latestRange);assert.deepEqual(latestRange.limits.aht,[240,360,1,338]);assert.equal(latestRange.limits.support[3],12);assert.equal(latestRange.limits.shrink[3],5);assert.deepEqual(latestRange.limits.acw,previousRange.limits.acw);assert.equal(previousRange.limits.aht[0],180);
 console.log('AHT 4–6 minute range migration preserves other settings.');
 
 const oldAcwRange=structuredClone(defaults);delete oldAcwRange.acwRangeVersion;oldAcwRange.limits.acw=[3600,10800,1,7200];oldAcwRange.limits.support[3]=9;
 const newAcwRange=upgradeOperatingDefaults(oldAcwRange);validate(newAcwRange);assert.deepEqual(newAcwRange.limits.acw,[3600,9000,1,7200]);assert.deepEqual(newAcwRange.limits.aht,oldAcwRange.limits.aht);assert.equal(newAcwRange.limits.support[3],9);assert.equal(oldAcwRange.limits.acw[1],10800);assert.equal(upgradeOperatingDefaults(newAcwRange),newAcwRange);
 console.log('ACW 60–150 minute range migration preserves other settings.');
+
+const priorTimes=structuredClone(defaults);delete priorTimes.currentTimesVersion;priorTimes.benchmarks.ahtCurrent=330;priorTimes.benchmarks.acwCurrent=7500;priorTimes.limits.aht[3]=330;priorTimes.limits.acw[3]=7500;const latestTimes=upgradeCurrentTimes(priorTimes);validate(latestTimes);assert.equal(latestTimes.benchmarks.ahtCurrent,338);assert.equal(latestTimes.limits.aht[3],338);assert.equal(latestTimes.benchmarks.acwCurrent,7200);assert.equal(latestTimes.limits.acw[3],7200);assert.equal(priorTimes.benchmarks.ahtCurrent,330);const editedTimes=structuredClone(latestTimes);editedTimes.benchmarks.ahtCurrent=340;editedTimes.limits.aht[3]=340;assert.equal(upgradeCurrentTimes(editedTimes),editedTimes);validate(editedTimes);
+console.log('AHT 5:38 and daily ACW 120-minute current defaults migrate once and preserve later Admin edits.');
