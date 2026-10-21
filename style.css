@@ -299,3 +299,7 @@ body[data-dashboard="campaign"] .intro{display:none}
 
 .benchmark-domestic{color:#0067b8}
 .threshold-mark.benchmark-domestic:before{border-color:#0078d4}
+
+/* Campaign reference lines remain clickable beside and across the slider. */
+.campaign-slider .campaign-benchmark{left:calc(50% - 32px);width:64px}
+.campaign-input-unit .benchmark-shortcut{font-size:8px;line-height:10px;padding:0;white-space:nowrap}
