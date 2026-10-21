@@ -400,3 +400,6 @@ body[data-dashboard="campaign"] .intro{display:none}
  .campaign-forward .campaign-day dl>div{flex-direction:row;align-items:center;justify-content:space-between;padding:5px 0;gap:4px}
 }
 @media(max-width:720px){.campaign-forward .campaign-staff-battery{height:165px}}
+
+/* Keep every Campaign weekday card border consistent. */
+.campaign-forward .campaign-day.selected{border-color:var(--line);box-shadow:none}
