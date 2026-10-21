@@ -329,3 +329,26 @@ body[data-dashboard="campaign"] .intro{display:none}
 #campaignShared{display:none}
 @media screen and (min-width:1060px) and (min-height:901px){#campaign .campaign-slider .track-area{height:60px}}
 @media screen and (min-width:1060px) and (max-height:900px){.campaign-staff-battery{height:52px}.campaign-result small{margin-top:2px}.campaign-planning-row{margin-bottom:0}}
+
+/* Forward Campaign scenarios use four broad controls and call-outcome batteries. */
+.campaign-forward .campaign-sliders{grid-template-columns:repeat(4,minmax(0,1fr))}
+.campaign-forward .campaign-slider .desc{height:18px}
+#campaignChecks{display:flex;gap:6px 15px;flex-wrap:wrap;margin:3px 0}
+.campaign-forward .campaign-slider .track-area{height:110px}
+.campaign-forward .campaign-result small{font-size:10px}
+.campaign-forward .campaign-input-unit .benchmark-shortcut{font-size:9px}
+.campaign-forward .campaign-staff-battery{width:50px;height:105px}
+.campaign-forward .campaign-staff-battery:before{left:14px}
+.campaign-forward .campaign-battery-number{font-size:20px}
+.campaign-forward .campaign-staff-battery.four-digits .campaign-battery-number{font-size:15px}
+.campaign-advanced{margin:16px 0}.campaign-advanced summary{cursor:pointer;font-weight:600;margin-bottom:12px}
+@media screen and (min-width:1060px) and (max-height:900px){
+ .campaign-forward .campaign-slider .track-area{height:clamp(40px,calc(100vh - 710px),90px)}
+ .campaign-forward .campaign-result small{font-size:9px;line-height:1.2}
+ .campaign-forward .campaign-staff-battery{height:56px;width:44px}
+ .campaign-forward .campaign-staff-battery:before{left:11px}
+ .campaign-forward .campaign-battery-number{font-size:18px}
+ .campaign-forward .campaign-staff-battery.four-digits .campaign-battery-number{font-size:14px}
+ .campaign-forward .campaign-slider .desc{height:12px}
+}
+@media(max-width:720px){.campaign-forward .campaign-sliders{grid-template-columns:repeat(2,minmax(0,1fr))}.campaign-forward .campaign-staff-battery{height:110px}}

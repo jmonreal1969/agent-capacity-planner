@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign,scaleCampaignDemand,campaignStaffingBattery} from './campaign-model.js';
+import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign,scaleCampaignDemand,campaignStaffingBattery,campaignOutcomes,campaignAhtForCalls} from './campaign-model.js';
 import {defaults} from './model.js';
 const near=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol, a+' ≠ '+b);
 assert.deepEqual(campaignCounts(7500,8),{queued:7500,abandoned:600,handled:6900});
@@ -80,3 +80,18 @@ const limitedArgs={...args,config:{...args.config,maxAgents:75},values:{...args.
 assert.equal(planCampaign({...args,queued:0,focus:'serviceTarget'}).headcount,0);
 const legacyFocus=campaignInitial();delete legacyFocus.focus;assert.equal(validateCampaignState(legacyFocus).focus,'all');assert.throws(()=>validateCampaignState({...campaignInitial(),focus:'unknown'}));
 console.log('Per-target minimum staffing, combined drivers, unmet goals, single-target sensitivity, infeasible combinations and saved planning mode passed.');
+
+const forwardArgs={queued:7500,aht:300,config:structuredClone(campaignDefaults),values:campaignInitial().values,agentConfig:structuredClone(defaults),agentValues:{agents:121,support:0,shrink:0,acw:5400}};
+const sweet=campaignOutcomes(forwardArgs);assert.equal(sweet.per,84);assert.equal(sweet.capacity,10164);assert.equal(sweet.handled+sweet.abandoned,7500);assert.ok(sweet.handled<=sweet.capacity);assert.ok(sweet.service<=sweet.handled/sweet.queued*100+1e-9);
+const fewer=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,agents:65}}),slow=campaignOutcomes({...forwardArgs,aht:360}),moreAcw=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,acw:9000}});
+for(const p of [fewer,slow,moreAcw]){assert.ok(p.handled<=sweet.handled);assert.ok(p.abandonRate>=sweet.abandonRate);assert.ok(p.service<=sweet.service);assert.ok(p.capacity<sweet.capacity);assert.equal(p.handled+p.abandoned,p.queued);}
+const none=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,agents:0}});assert.equal(none.handled,0);assert.equal(none.abandoned,7500);assert.equal(none.service,0);assert.equal(none.wait,null);assert.equal(none.goalStatus.waitTarget,false);
+const zero=campaignOutcomes({...forwardArgs,queued:0});assert.equal(zero.handled,0);assert.equal(zero.abandoned,0);assert.equal(zero.wait,null);assert.equal(zero.service,null);assert.equal(zero.goalStatus,null);
+const noTime=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,acw:30600}});assert.equal(noTime.handled,0);assert.equal(noTime.capacity,0);
+const link=campaignAhtForCalls(84,5400,defaults);assert.equal(link.aht,300);assert.equal(link.actual,84);assert.equal(link.limited,false);assert.equal(campaignAhtForCalls(0,5400,defaults).valid,false);assert.equal(campaignAhtForCalls(150,5400,defaults).limited,true);
+const otherGoals=campaignOutcomes({...forwardArgs,config:{...forwardArgs.config,benchmarks:{abandonRate:0,serviceTarget:100}}});assert.equal(otherGoals.handled,sweet.handled);assert.equal(otherGoals.service,sweet.service);
+const reserveForward=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,support:10}});assert.ok(reserveForward.capacity>sweet.capacity);assert.ok(reserveForward.service>=sweet.service);
+const allUnavailable=campaignOutcomes({...forwardArgs,agentValues:{...forwardArgs.agentValues,shrink:121}});assert.equal(allUnavailable.handled,0);
+assert.equal(campaignOutcomes({...forwardArgs,aht:0}).valid,false);
+const oldCallsGoal=campaignInitial();delete oldCallsGoal.config.callsBenchmark;assert.equal(validateCampaignState(oldCallsGoal).config.callsBenchmark,84);
+console.log('Forward Campaign outcomes: sweet spot, staffing/productivity sensitivity, reconciled counts, goal independence, zero demand/staff/time, reserve support and linked calls control passed.');

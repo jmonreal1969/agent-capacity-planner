@@ -3,7 +3,7 @@
 // with Impatient Customers. All rates below use seconds.
 const copy=x=>JSON.parse(JSON.stringify(x));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export const campaignDefaults={version:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
+export const campaignDefaults={version:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},callsBenchmark:84,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
 export function validateCampaignState(data){
   if(!data||data.version!==1||!data.config||!data.values)throw Error('Unsupported Campaign backup.');
   const c=data.config;
@@ -19,6 +19,8 @@ export function validateCampaignState(data){
   for(const k of ['serviceTarget','abandonRate'])if(!Number.isFinite(next.config.benchmarks?.[k])||next.config.benchmarks[k]<0||next.config.benchmarks[k]>100)throw Error('Check Campaign '+k+' benchmark.');
   if(next.focus===undefined)next.focus='all';
   if(!['all','abandonRate','waitTarget','serviceTarget'].includes(next.focus))throw Error('Check the Campaign planning target.');
+  if(next.config.callsBenchmark===undefined)next.config.callsBenchmark=84;
+  if(!Number.isFinite(next.config.callsBenchmark)||next.config.callsBenchmark<=0||next.config.callsBenchmark>10000)throw Error('Check the calls-per-agent benchmark.');
   return next;
 }
 export function campaignInitial(config=campaignDefaults){return {version:1,focus:'all',config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
@@ -75,3 +77,20 @@ export function planCampaign({queued,aht,config,values,agentConfig,agentValues,f
 
 export function scaleCampaignDemand(days,selected,queued,max){const anchor=days[selected];return days.map((d,i)=>i===selected?Math.round(clamp(queued,0,max)):Math.round(clamp(anchor>0?d*queued/anchor:queued,0,max)));}
 export function campaignStaffingBattery(required,current){if(!Number.isFinite(required)||required<0)return {green:0,red:0,covered:0,additional:0,spare:0,empty:true,numberOnEmpty:true};const covered=Math.min(required,current),additional=Math.max(0,required-current),spare=Math.max(0,current-required),scale=Math.max(required,current,1),green=covered/scale,red=additional/scale;return {green,red,covered,additional,spare,empty:required===0,numberOnEmpty:green+red<.5};}
+
+/** Forward scenario: fixed staffing produces queue outcomes, rather than solving staffing targets. */
+export function campaignOutcomes({queued,aht,config,values,agentConfig,agentValues}){
+ const productive=Math.max(0,agentConfig.shift*3600-agentValues.acw),fte=Math.max(0,agentValues.agents-agentValues.shrink)+agentValues.support*agentConfig.contribution/100,per=aht>0?productive/aht:0,capacity=Math.floor(fte*per+1e-9),active=Math.floor(fte*productive/(config.openHours*3600)+1e-9);
+ if(!Number.isFinite(queued)||queued<0||!Number.isFinite(aht)||aht<=0)return {valid:false,reason:'Enter valid demand and an AHT greater than zero.'};
+ try{
+  const stats=queueStats({arrivalRate:queued/(config.openHours*3600),aht,patience:values.patience,agents:active,serviceSeconds:config.serviceSeconds});
+  const handled=queued?Math.min(queued,capacity,Math.round(queued*stats.served)):0,abandoned=queued-handled,abandonRate=queued?abandoned/queued*100:0,service=queued?Math.min(stats.service,handled/queued)*100:null,wait=queued&&handled>0?stats.wait:null;
+  const goals=config.benchmarks||{serviceTarget:75,abandonRate:3},goalStatus=queued?{abandonRate:abandonRate<=goals.abandonRate+1e-8,waitTarget:wait!==null&&wait<=values.waitTarget+1e-8,serviceTarget:service>=goals.serviceTarget-1e-8}:null;
+  return {valid:true,queued,handled,abandoned,abandonRate,service,wait,per,capacity,fte,active,productive,stats,goalStatus,allMet:goalStatus?Object.values(goalStatus).every(Boolean):null};
+ }catch(e){return {valid:false,reason:e.message,per,capacity,active};}
+}
+export function campaignAhtForCalls(calls,acw,config){
+ if(!Number.isFinite(calls)||calls<=0)return {valid:false,reason:'Calls per agent must be greater than zero; AHT and ACW determine the achievable average.'};
+ const productive=Math.max(0,config.shift*3600-acw),l=config.limits.aht,wanted=productive/calls,aht=clamp(l[0]+Math.round((wanted-l[0])/l[2])*l[2],l[0],l[1]);
+ return {valid:true,aht,actual:aht>0?productive/aht:0,limited:wanted<l[0]||wanted>l[1]};
+}
