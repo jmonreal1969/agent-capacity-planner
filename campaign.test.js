@@ -61,3 +61,9 @@ assert(campaignStaffingBattery(90,121).green<coveredBattery.green);
 const gapBattery=campaignStaffingBattery(102,50);near(gapBattery.green,50/102);near(gapBattery.red,52/102);assert.equal(gapBattery.additional,52);
 assert.equal(campaignStaffingBattery(0,121).empty,true);assert.equal(campaignStaffingBattery(null,121).empty,true);assert.equal(campaignStaffingBattery(100,0).red,1);
 console.log('Week-wide demand scaling and responsive staffing battery checks passed.');
+
+assert.deepEqual(campaignDefaults.limits.abandonRate,[0,20,.1,8]);
+const oldPercent=campaignInitial();delete oldPercent.config.abandonRangeVersion;oldPercent.config.limits.abandonRate=[0,100,.1,35];oldPercent.values.abandonRate=40;
+const newPercent=validateCampaignState(oldPercent);assert.deepEqual(newPercent.config.limits.abandonRate,[0,20,.1,20]);assert.equal(newPercent.values.abandonRate,20);assert.equal(oldPercent.values.abandonRate,40);
+const editedPercent=structuredClone(newPercent);editedPercent.config.limits.abandonRate=[0,15,.1,3];editedPercent.values.abandonRate=3;assert.deepEqual(validateCampaignState(editedPercent),editedPercent);
+console.log('Abandonment defaults and saved ranges migrate to 0–20% once; later Admin edits persist.');
