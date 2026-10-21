@@ -146,9 +146,9 @@
 .campaign-day{border:1px solid var(--line);border-radius:10px;background:#fafbf7;padding:14px 16px;min-width:0}
 .campaign-day.selected{border-color:#9eaf8f;box-shadow:0 0 0 2px #edf2e5}
 .campaign-day>button{background:none;border:0;padding:0;color:var(--ink);font-size:12px;font-weight:600}
-.campaign-required{display:flex;align-items:baseline;gap:8px;margin:8px 0 10px}
-.campaign-required strong{font:30px Georgia,serif}
-.campaign-required span{font-size:9px;color:var(--muted)}
+
+
+
 .campaign-day dl{margin:0;border-top:1px solid var(--line);padding-top:8px;font-size:10px}
 .campaign-day dl>div{display:flex;justify-content:space-between;gap:6px;margin-top:4px}
 .campaign-day dt{color:var(--muted)}
@@ -172,14 +172,14 @@
  .campaign-result{margin-top:4px;padding-top:5px;line-height:1.25}
  .campaign-result small{font-size:9px;margin-top:3px}
  .campaign-day{padding:8px 12px}
- .campaign-required{margin:3px 0 5px}
- .campaign-required strong{font-size:25px}
+ 
+ 
  .campaign-day dl{padding-top:4px}
  .campaign-day dl>div{margin-top:2px}
  #campaign>.method{padding:9px 16px}
 }
 @media(max-width:1199px){.campaign-sliders{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.campaign-slider:nth-child(4){border-right:0}}
-@media(max-width:720px){.home-actions{justify-content:flex-end;gap:5px}.intro{gap:10px}.intro .home-actions .secondary{font-size:9px;padding:7px}.campaign-sliders{grid-template-columns:repeat(2,minmax(0,1fr))}.campaign-slider:nth-child(even){border-right:0}.campaign-days{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.campaign-day{padding:12px}.campaign-day:last-child{grid-column:1/-1}.campaign-required{flex-wrap:wrap;gap:4px}.campaign-day dl>div{flex-wrap:wrap}.campaign-admin .settings-grid{gap:12px}}
+@media(max-width:720px){.home-actions{justify-content:flex-end;gap:5px}.intro{gap:10px}.intro .home-actions .secondary{font-size:9px;padding:7px}.campaign-sliders{grid-template-columns:repeat(2,minmax(0,1fr))}.campaign-slider:nth-child(even){border-right:0}.campaign-days{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.campaign-day{padding:12px}.campaign-day:last-child{grid-column:1/-1}.campaign-day dl>div{flex-wrap:wrap}.campaign-admin .settings-grid{gap:12px}}
 @media print{.home-actions,#campaign .campaign-day-choice,#campaignReset{display:none}.campaign-sliders{grid-template-columns:repeat(8,minmax(0,1fr))}.campaign-days{grid-template-columns:repeat(5,minmax(0,1fr))}}
 /* Keep Campaign results readable in the same viewport as its scenarios. */
 #campaign .summary{padding:14px 0;margin-bottom:14px}
@@ -197,7 +197,7 @@
 .campaign-slider .track-area{height:140px}
 .campaign-result{line-height:1.3}
 .campaign-day{line-height:1.3;padding:11px 14px}
-.campaign-required strong{line-height:1.1}
+
 @media screen and (min-width:1060px) and (max-height:900px){
  #campaign .summary{padding:9px 0;margin-bottom:6px}
  #campaign .summary strong{font-size:28px;margin:0;line-height:1.25}
@@ -212,3 +212,43 @@
  .campaign-day{padding:8px 12px}
 }
 @media screen and (min-width:1060px) and (min-height:901px){.campaign-slider .track-area{height:110px}}
+
+/* Campaign staffing batteries: primary headcount covered / still needed. */
+.campaign-battery-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 10px}
+.campaign-staff-battery{height:80px;width:62px;padding:3px}
+.campaign-staff-battery:before{width:24px;left:17px}
+.campaign-staff-battery .inside{width:100%;flex:1}
+.campaign-staff-battery .covered{flex:none}
+.campaign-battery-number{position:absolute;inset:0;display:grid;place-items:center;font:27px/1 Georgia,serif;color:#fff;text-shadow:0 1px 3px #163b3770;pointer-events:none}
+.campaign-staff-battery.empty .campaign-battery-number{color:var(--ink);text-shadow:none}
+.campaign-battery-caption{font-size:10px;line-height:1.2;color:var(--muted);text-align:center}
+.campaign-battery-legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:10px;line-height:1.2;margin-top:10px}
+@media screen and (min-width:1060px) and (max-height:900px){
+ #campaign>.panel{padding:9px 16px}
+ #campaign .section-head{margin-bottom:4px}
+ .campaign-battery-wrap{gap:3px;margin:8px 0 5px}
+ .campaign-staff-battery{height:44px;width:48px;padding:2px}
+ .campaign-staff-battery:before{width:20px;left:12px}
+ .campaign-battery-number{font-size:22px}
+ .campaign-battery-caption{font-size:9px}
+ .campaign-day dl{font-size:9px;line-height:1.2}
+ .campaign-day dl>div{margin-top:2px}
+ .campaign-battery-legend{font-size:9px;margin-top:6px}
+}
+@media screen and (min-width:1060px) and (min-height:901px){
+ #campaign .campaign-slider .track-area{height:80px}
+ #campaign .section-head{margin-bottom:8px}
+ #campaign .summary{padding:11px 0}
+}
+
+@media screen and (min-width:1060px) and (max-height:900px){
+ .campaign-staff-battery{height:40px}
+ .campaign-battery-wrap{margin:6px 0 3px}
+ .campaign-day{padding:6px 12px}
+ .campaign-battery-legend{margin-top:4px}
+}
+@media screen and (min-width:1060px) and (min-height:901px){
+ #campaign>.panel{padding:12px 18px;margin-bottom:10px}
+ #campaign .summary{margin-bottom:10px}
+ .campaign-staff-battery{height:60px}
+}
