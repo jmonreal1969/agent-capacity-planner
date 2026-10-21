@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults,upgradeCurrentTimes} from './model.js';
+import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults,upgradeCurrentTimes,upgradeSupportRange} from './model.js';
 const c={...structuredClone(defaults),contribution:0};c.limits.aht=[180,420,1,330];const v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
 let m=metrics(v,c);assert.equal(m.productive,25200);assert.equal(m.available,60);assert.equal(m.activePer,84);assert.equal(m.per,84);assert.equal(m.capacity,5040);
 assert.equal(metrics({...v,shrink:0},c).capacity,6720);assert.equal(metrics({...v,acw:0},c).capacity,6120);assert.equal(metrics({...v,acw:10800},c).capacity,3960);
@@ -49,3 +49,10 @@ console.log('ACW 60–150 minute range migration preserves other settings.');
 
 const priorTimes=structuredClone(defaults);delete priorTimes.currentTimesVersion;priorTimes.benchmarks.ahtCurrent=330;priorTimes.benchmarks.acwCurrent=7500;priorTimes.limits.aht[3]=330;priorTimes.limits.acw[3]=7500;const latestTimes=upgradeCurrentTimes(priorTimes);validate(latestTimes);assert.equal(latestTimes.benchmarks.ahtCurrent,338);assert.equal(latestTimes.limits.aht[3],338);assert.equal(latestTimes.benchmarks.acwCurrent,7200);assert.equal(latestTimes.limits.acw[3],7200);assert.equal(priorTimes.benchmarks.ahtCurrent,330);const editedTimes=structuredClone(latestTimes);editedTimes.benchmarks.ahtCurrent=340;editedTimes.limits.aht[3]=340;assert.equal(upgradeCurrentTimes(editedTimes),editedTimes);validate(editedTimes);
 console.log('AHT 5:38 and daily ACW 120-minute current defaults migrate once and preserve later Admin edits.');
+
+assert.deepEqual(defaults.limits.support,[0,60,1,0]);
+const previousSupportRange=structuredClone(defaults);delete previousSupportRange.supportRangeVersion;previousSupportRange.limits.support=[0,100,1,80];
+const limitedSupport=upgradeOperatingDefaults(previousSupportRange);validate(limitedSupport);assert.deepEqual(limitedSupport.limits.support,[0,60,1,60]);assert.equal(previousSupportRange.limits.support[1],100);
+const customSupportRange=structuredClone(limitedSupport);customSupportRange.limits.support=[0,50,1,0];assert.equal(upgradeSupportRange(customSupportRange),customSupportRange);
+assert.ok(metrics({...v,support:60},defaults).capacity>metrics({...v,support:0},defaults).capacity);
+console.log('Support range 0–60 migrates saved settings once, preserves Admin edits, and adds call capacity.');
