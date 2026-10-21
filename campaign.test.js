@@ -95,3 +95,13 @@ const allUnavailable=campaignOutcomes({...forwardArgs,agentValues:{...forwardArg
 assert.equal(campaignOutcomes({...forwardArgs,aht:0}).valid,false);
 const oldCallsGoal=campaignInitial();delete oldCallsGoal.config.callsBenchmark;assert.equal(validateCampaignState(oldCallsGoal).config.callsBenchmark,84);
 console.log('Forward Campaign outcomes: sweet spot, staffing/productivity sensitivity, reconciled counts, goal independence, zero demand/staff/time, reserve support and linked calls control passed.');
+
+const oldTemporaryPatience=campaignInitial();delete oldTemporaryPatience.config.queueAssumptionsVersion;oldTemporaryPatience.values.patience=1;oldTemporaryPatience.config.limits.patience[3]=90;const restoredPatience=validateCampaignState(oldTemporaryPatience);assert.equal(restoredPatience.values.patience,90);assert.equal(oldTemporaryPatience.values.patience,1);assert.equal(restoredPatience.config.queueAssumptionsVersion,1);
+const explicitShortPatience=structuredClone(oldTemporaryPatience);explicitShortPatience.config.limits.patience[3]=1;assert.equal(validateCampaignState(explicitShortPatience).values.patience,1);
+const laterAssumption=structuredClone(restoredPatience);laterAssumption.values.patience=100;laterAssumption.config.limits.patience[3]=100;assert.equal(validateCampaignState(laterAssumption).values.patience,100);
+const screenshotArgs={...forwardArgs,queued:10452,aht:338,agentValues:{agents:121,support:0,shrink:0,acw:7200}};
+const screenshotOld=campaignOutcomes({...screenshotArgs,values:{...forwardArgs.values,patience:1}}),screenshotFixed=campaignOutcomes({...screenshotArgs,values:{...forwardArgs.values,patience:90}});
+assert.equal(screenshotOld.handled,8076);assert.equal(screenshotOld.abandoned,2376);assert.equal(screenshotOld.wait.toFixed(1),'0.1');assert.equal(screenshotFixed.wait.toFixed(1),'19.4');
+const lowerHc=campaignOutcomes({...screenshotArgs,agentValues:{...screenshotArgs.agentValues,agents:80}}),higherAht=campaignOutcomes({...screenshotArgs,aht:360}),higherAcw=campaignOutcomes({...screenshotArgs,agentValues:{...screenshotArgs.agentValues,acw:9000}});
+assert.ok(lowerHc.wait>screenshotFixed.wait+20);assert.ok(higherAht.wait>screenshotFixed.wait);assert.ok(higherAcw.wait>screenshotFixed.wait);
+console.log('Legacy one-second patience scenario uses Admin default once; explicit assumptions persist; screenshot reproduced and wait reacts to staffing, AHT and ACW.');
