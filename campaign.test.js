@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign,scaleCampaignDemand,campaignStaffingBattery,campaignOutcomes,campaignAhtForCalls} from './campaign-model.js';
+import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign,scaleCampaignDemand,campaignStaffingBattery,campaignOutcomes,campaignAhtForCalls,campaignStaffingValues} from './campaign-model.js';
 import {defaults} from './model.js';
 const near=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol, a+' ≠ '+b);
 assert.deepEqual(campaignCounts(7500,8),{queued:7500,abandoned:600,handled:6900});
@@ -105,3 +105,7 @@ assert.equal(screenshotOld.handled,8076);assert.equal(screenshotOld.abandoned,23
 const lowerHc=campaignOutcomes({...screenshotArgs,agentValues:{...screenshotArgs.agentValues,agents:80}}),higherAht=campaignOutcomes({...screenshotArgs,aht:360}),higherAcw=campaignOutcomes({...screenshotArgs,agentValues:{...screenshotArgs.agentValues,acw:9000}});
 assert.ok(lowerHc.wait>screenshotFixed.wait+20);assert.ok(higherAht.wait>screenshotFixed.wait);assert.ok(higherAcw.wait>screenshotFixed.wait);
 console.log('Legacy one-second patience scenario uses Admin default once; explicit assumptions persist; screenshot reproduced and wait reacts to staffing, AHT and ACW.');
+
+assert.equal(campaignDefaults.headcountMax,175);assert.deepEqual(campaignStaffingValues({agents:121,support:20,shrink:5},175),{agents:155,support:20,shrink:5});assert.deepEqual(campaignStaffingValues({agents:121,support:20,shrink:5},10),{agents:0,support:10,shrink:5});const combined=campaignStaffingValues({agents:121,support:20,shrink:0,acw:5400},175);const combinedResult=campaignOutcomes({...forwardArgs,agentValues:combined});assert.equal(combinedResult.capacity,175*84);assert.equal(defaults.limits.agents[1],150);assert.equal(defaults.limits.support[1],60);
+const oldCombined=campaignInitial();delete oldCombined.config.headcountMax;delete oldCombined.headcount;assert.equal(validateCampaignState(oldCombined).config.headcountMax,175);assert.equal(validateCampaignState(oldCombined).headcount,null);assert.equal(validateCampaignState({...campaignInitial(),headcount:175}).headcount,175);assert.throws(()=>validateCampaignState({...campaignInitial(),headcount:176}));
+console.log('Campaign-only maximum175, combined support counted once, shared Agent limits unchanged, saved staffing and backup validation passed.');

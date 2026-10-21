@@ -3,7 +3,7 @@
 // with Impatient Customers. All rates below use seconds.
 const copy=x=>JSON.parse(JSON.stringify(x));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export const campaignDefaults={version:1,queueAssumptionsVersion:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},callsBenchmark:84,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
+export const campaignDefaults={version:1,queueAssumptionsVersion:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},callsBenchmark:84,headcountMax:175,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
 export function validateCampaignState(data){
   if(!data||data.version!==1||!data.config||!data.values)throw Error('Unsupported Campaign backup.');
   const c=data.config;
@@ -24,9 +24,13 @@ export function validateCampaignState(data){
   // Patience moved from a temporary scenario slider into an Admin assumption.
   // Use its configured default once; preserve explicit Admin defaults thereafter.
   if(next.config.queueAssumptionsVersion!==1){next.values.patience=next.config.limits.patience[3];next.config.queueAssumptionsVersion=1;}
+  if(next.config.headcountMax===undefined)next.config.headcountMax=175;
+  if(!Number.isInteger(next.config.headcountMax)||next.config.headcountMax<1||next.config.headcountMax>10000)throw Error('Check Campaign headcount maximum.');
+  if(next.headcount===undefined)next.headcount=null;
+  if(next.headcount!==null&&(!Number.isInteger(next.headcount)||next.headcount<0||next.headcount>next.config.headcountMax))throw Error('Check Campaign combined headcount.');
   return next;
 }
-export function campaignInitial(config=campaignDefaults){return {version:1,focus:'all',config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
+export function campaignInitial(config=campaignDefaults){return {version:1,focus:'all',headcount:null,config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
 export function campaignCounts(queued,rate){const abandoned=Math.round(queued*clamp(rate,0,100)/100);return {queued,abandoned,handled:queued-abandoned};}
 
 export function queueStats({arrivalRate,aht,patience,agents,serviceSeconds}){
@@ -97,3 +101,6 @@ export function campaignAhtForCalls(calls,acw,config){
  const productive=Math.max(0,config.shift*3600-acw),l=config.limits.aht,wanted=productive/calls,aht=clamp(l[0]+Math.round((wanted-l[0])/l[2])*l[2],l[0],l[1]);
  return {valid:true,aht,actual:aht>0?productive/aht:0,limited:wanted<l[0]||wanted>l[1]};
 }
+
+// A Campaign headcount includes support; allocate it once using the shared support mix.
+export function campaignStaffingValues(values,total){if(!Number.isInteger(total)||total<0)throw Error('Combined headcount must be a non-negative whole number.');const support=Math.min(values.support,total);return {...values,agents:total-support,support};}
