@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults} from './model.js';
-const c={...structuredClone(defaults),contribution:0},v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
+const c={...structuredClone(defaults),contribution:0};c.limits.aht=[180,420,1,330];const v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
 let m=metrics(v,c);assert.equal(m.productive,25200);assert.equal(m.available,60);assert.equal(m.activePer,84);assert.equal(m.per,84);assert.equal(m.capacity,5040);
 assert.equal(metrics({...v,shrink:0},c).capacity,6720);assert.equal(metrics({...v,acw:0},c).capacity,6120);assert.equal(metrics({...v,acw:10800},c).capacity,3960);
 assert.equal(metrics({...v,agents:0},c).capacity,0);assert.equal(metrics({...v,agents:0},c).per,84);assert.equal(metrics({...v,shrink:90},c).capacity,0);
@@ -20,7 +20,7 @@ const legacySupport={...reserveConfig,contribution:0};delete legacySupport.suppo
 const noReserveSolution=solve(v,c,60,4800,'aht'),reserveSolution=solve(v,reserveConfig,60,4800,'aht');assert.ok(reserveSolution.values.agents<noReserveSolution.values.agents);assert.ok(metrics(reserveSolution.values,reserveConfig).capacity>=4800);
 console.log('Reserve support checks passed: full contribution, additional capacity, reserve-only coverage, saved config upgrade, explicit overrides, and reverse staffing.');
 const reserveMetrics=metrics(v,reserveConfig);assert.equal(reserveMetrics.per,84);assert.equal(reserveMetrics.per,metrics({...v,support:0},reserveConfig).per);assert.equal(metrics({...v,agents:0,shrink:0,support:8},reserveConfig).per,84);
-const fullPoolSolve=solve(v,reserveConfig,60,4800,'aht');assert.ok(Math.abs(metrics(fullPoolSolve.values,reserveConfig).per-60)<.2);
+const fullPoolSolve=solve(v,reserveConfig,84,4800,'aht');assert.ok(Math.abs(metrics(fullPoolSolve.values,reserveConfig).per-84)<.2);
 
 assert.equal(upgradeSupportConfig({...defaults,supportModelVersion:1,contribution:0}).contribution,100);
 
@@ -34,7 +34,11 @@ assert.throws(()=>validate({...custom,benchmarks:{...custom.benchmarks,agents:12
 const offStep=structuredClone(custom);offStep.limits.aht[2]=5;offStep.benchmarks.ahtCurrent=321;assert.throws(()=>validate(offStep));
 console.log('Editable benchmark defaults, upgrade, custom preservation, range and step validation passed.');
 
-assert.deepEqual(defaults.limits.aht,[180,420,1,330]);assert.deepEqual(defaults.limits.acw,[3600,10800,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
+assert.deepEqual(defaults.limits.aht,[240,360,1,330]);assert.deepEqual(defaults.limits.acw,[3600,10800,1,7200]);assert.equal(defaults.limits.support[3],0);assert.equal(defaults.limits.shrink[3],0);
 const previousDefaults=structuredClone(defaults);delete previousDefaults.operatingDefaultsVersion;previousDefaults.limits.aht=[0,600,1,300];previousDefaults.limits.acw=[0,10800,1,5400];previousDefaults.limits.support[3]=8;previousDefaults.limits.shrink[3]=20;
-const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[180,420,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,10800,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
+const narrowed=upgradeOperatingDefaults(previousDefaults);validate(narrowed);assert.deepEqual(narrowed.limits.aht,[240,360,1,330]);assert.deepEqual(narrowed.limits.acw,[3600,10800,1,7200]);assert.equal(narrowed.limits.support[3],0);assert.equal(narrowed.limits.shrink[3],0);assert.equal(previousDefaults.limits.support[3],8);assert.equal(upgradeOperatingDefaults(narrowed),narrowed);
 console.log('Narrow time ranges, red-benchmark defaults and zero staffing adjustments passed.');
+
+const previousRange=structuredClone(defaults);previousRange.operatingDefaultsVersion=1;previousRange.limits.aht=[180,420,1,330];previousRange.limits.support[3]=12;previousRange.limits.shrink[3]=5;
+const latestRange=upgradeOperatingDefaults(previousRange);validate(latestRange);assert.deepEqual(latestRange.limits.aht,[240,360,1,330]);assert.equal(latestRange.limits.support[3],12);assert.equal(latestRange.limits.shrink[3],5);assert.deepEqual(latestRange.limits.acw,previousRange.limits.acw);assert.equal(previousRange.limits.aht[0],180);
+console.log('AHT 4–6 minute range migration preserves other settings.');
