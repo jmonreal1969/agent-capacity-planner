@@ -100,3 +100,20 @@
   .legend{flex-wrap:wrap;gap:10px 15px;margin-top:18px;font-size:10px}
   .legend span:last-child{width:100%;margin-left:0}
 }
+
+/* Editable, clickable slider reference points. */
+.benchmark-shortcuts{position:absolute;bottom:1px;left:3px;right:3px;display:flex;justify-content:center;gap:5px;align-items:center}
+.benchmark-shortcuts .benchmark-shortcut{font-size:8px;line-height:12px;padding:1px 0;white-space:nowrap;min-width:0;letter-spacing:-.15px}
+.benchmark-goal{color:#147751}
+.benchmark-current{color:#bc4137}
+.benchmark-baseline{color:var(--ink)}
+.benchmark-target{color:#946b2d}
+.threshold-mark.benchmark-goal{left:calc(50% - 36px);width:36px}
+.threshold-mark.benchmark-current{left:50%;width:36px}
+.threshold-mark.benchmark-goal:before{border-color:#16835e}
+.threshold-mark.benchmark-current:before{border-color:#cf5146}
+.threshold-mark.benchmark-baseline:before{border-color:var(--ink)}
+.benchmark-setting{font-size:11px}
+.benchmark-time{display:flex;gap:8px;margin-top:6px}
+.benchmark-time label{flex:1;min-width:0;font-size:9px}
+.benchmark-time input{margin-top:3px}
