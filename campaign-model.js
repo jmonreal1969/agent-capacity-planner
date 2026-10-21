@@ -1,0 +1,66 @@
+// Erlang A: Poisson arrivals, exponential service/patience, one FCFS queue.
+// Source model: Garnett, Mandelbaum & Reiman (2002), Designing a Call Center
+// with Impatient Customers. All rates below use seconds.
+const copy=x=>JSON.parse(JSON.stringify(x));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+export const campaignDefaults={version:1,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,100,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
+export function validateCampaignState(data){
+  if(!data||data.version!==1||!data.config||!data.values)throw Error('Unsupported Campaign backup.');
+  const c=data.config;
+  if(c.version!==1||!Number.isFinite(c.openHours)||c.openHours<.1||c.openHours>24||!Number.isFinite(c.serviceSeconds)||c.serviceSeconds<0||c.serviceSeconds>3600||!Number.isInteger(c.maxAgents)||c.maxAgents<1||c.maxAgents>1000)throw Error('Check Campaign operating hours, service threshold, and staffing limit.');
+  for(const [k,ceiling]of Object.entries({abandonRate:100,waitTarget:3600,patience:7200,serviceTarget:100})){
+    const l=c.limits?.[k],min=k==='patience'?1:0;
+    if(!Array.isArray(l)||l.length!==4||l.some(x=>!Number.isFinite(x))||l[0]<min||l[1]>ceiling||l[1]<=l[0]||l[2]<=0||l[2]>l[1]-l[0]||l[3]<l[0]||l[3]>l[1]||!Number.isFinite(data.values[k])||data.values[k]<l[0]||data.values[k]>l[1])throw Error('Check Campaign '+k+' range and values.');
+  }
+  if(!Number.isInteger(data.day)||data.day<0||data.day>4)throw Error('Check the Campaign weekday.');
+  return copy(data);
+}
+export function campaignInitial(config=campaignDefaults){return {version:1,config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
+export function campaignCounts(queued,rate){const abandoned=Math.round(queued*clamp(rate,0,100)/100);return {queued,abandoned,handled:queued-abandoned};}
+
+export function queueStats({arrivalRate,aht,patience,agents,serviceSeconds}){
+  if(!Number.isFinite(arrivalRate)||arrivalRate<0||!Number.isFinite(aht)||aht<=0||!Number.isFinite(patience)||patience<=0||!Number.isInteger(agents)||agents<0||!Number.isFinite(serviceSeconds)||serviceSeconds<0)throw Error('Invalid queue inputs.');
+  if(arrivalRate===0)return {served:1,abandon:0,service:1,wait:0,abandonWait:0,queue:0,occupancy:0,immediate:1};
+  if(agents===0)return {served:0,abandon:1,service:0,wait:Infinity,abandonWait:patience,queue:arrivalRate*patience,occupancy:0,immediate:0};
+  const mu=1/aht,theta=1/patience,logs=[0];let peak=0,done=false;
+  for(let k=1;k<=20000;k++){
+    const death=Math.min(k,agents)*mu+Math.max(0,k-agents)*theta;
+    const next=logs[k-1]+Math.log(arrivalRate/death);logs.push(next);peak=Math.max(peak,next);
+    if(k>agents&&death>arrivalRate&&next<peak-38){done=true;break;}
+  }
+  if(!done)throw Error('Demand is outside the supported queue-model range.');
+  const w=logs.map(x=>Math.exp(x-peak)),total=w.reduce((a,b)=>a+b,0),p=w.map(x=>x/total);
+  let served=0,service=0,servedWait=0,queue=0,busy=0,immediate=0;
+  const b=agents*mu/theta+1,x=-Math.expm1(-theta*serviceSeconds);
+  let sumRecip=0,logTerm=-b*theta*serviceSeconds,cumulative=0;
+  for(let k=0;k<p.length;k++){
+    busy+=p[k]*Math.min(k,agents);queue+=p[k]*Math.max(0,k-agents);
+    if(k<agents){immediate+=p[k];served+=p[k];service+=p[k];continue;}
+    const q=k-agents,d=agents*mu+(q+1)*theta,probServe=agents*mu/d;
+    sumRecip+=1/d;
+    // The conditional served-wait CDF is I_x(q+1,b). Its complement is a
+    // negative-binomial partial sum, evaluated recursively in log space.
+    if(q>0)logTerm+=Math.log(b+q-1)-Math.log(q)+Math.log(x);
+    cumulative+=Math.exp(logTerm);
+    const cdf=clamp(1-cumulative,0,1);
+    served+=p[k]*probServe;servedWait+=p[k]*probServe*sumRecip;service+=p[k]*probServe*cdf;
+  }
+  const abandon=clamp(theta*queue/arrivalRate,0,1),allWait=queue/arrivalRate;
+  return {served:clamp(served,0,1),abandon,service:clamp(service,0,served),wait:served>0?servedWait/served:Infinity,abandonWait:abandon>1e-14?Math.max(0,(allWait-servedWait)/abandon):0,queue,occupancy:busy/agents,immediate};
+}
+
+export function planCampaign({queued,aht,config,values,agentConfig,agentValues}){
+  const target=campaignCounts(queued,values.abandonRate),availability=Math.max(0,(agentConfig.shift*3600-agentValues.acw)/(agentConfig.shift*3600));
+  if(!queued)return {target,feasible:true,active:0,headcount:0,gap:-agentValues.agents,stats:queueStats({arrivalRate:0,aht,patience:values.patience,agents:0,serviceSeconds:config.serviceSeconds}),modeled:{handled:0,abandoned:0}};
+  if(availability<=0)return {target,feasible:false,reason:'Daily ACW leaves no call-handling time. Reduce ACW in Agent view.',active:null,headcount:null};
+  const cache=new Map(),evaluate=n=>{if(!cache.has(n))cache.set(n,queueStats({arrivalRate:queued/(config.openHours*3600),aht,patience:values.patience,agents:n,serviceSeconds:config.serviceSeconds}));return cache.get(n);};
+  const meets=s=>s.abandon<=values.abandonRate/100+1e-10&&s.wait<=values.waitTarget+1e-8&&s.service>=values.serviceTarget/100-1e-10;
+  try{
+    const best=evaluate(config.maxAgents);
+    if(!meets(best))return {target,feasible:false,reason:'Targets cannot be met within the '+config.maxAgents+' active-agent search limit.',active:null,headcount:null,stats:best};
+    let lo=1,hi=config.maxAgents;while(lo<hi){const mid=Math.floor((lo+hi)/2);if(meets(evaluate(mid)))hi=mid;else lo=mid+1;}
+    const stats=evaluate(lo),headcount=Math.max(0,Math.ceil(lo/availability+agentValues.shrink-agentValues.support*agentConfig.contribution/100-1e-9));
+    const abandoned=Math.round(queued*stats.abandon);
+    return {target,feasible:true,active:lo,headcount,gap:headcount-agentValues.agents,stats,availability,modeled:{abandoned,handled:queued-abandoned}};
+  }catch(e){return {target,feasible:false,active:null,headcount:null,reason:e.message};}
+}

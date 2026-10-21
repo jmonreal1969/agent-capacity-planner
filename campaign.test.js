@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import {campaignDefaults,campaignInitial,validateCampaignState,campaignCounts,queueStats,planCampaign} from './campaign-model.js';
+import {defaults} from './model.js';
+const near=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol, a+' ≠ '+b);
+assert.deepEqual(campaignCounts(7500,8),{queued:7500,abandoned:600,handled:6900});
+assert.deepEqual(campaignCounts(3,50),{queued:3,abandoned:2,handled:1});
+assert.deepEqual(campaignCounts(0,8),{queued:0,abandoned:0,handled:0});
+validateCampaignState(campaignInitial());
+assert.throws(()=>validateCampaignState({...campaignInitial(),day:5}));
+assert.throws(()=>validateCampaignState({...campaignInitial(),values:{...campaignInitial().values,patience:0}}));
+const q=queueStats({arrivalRate:1,aht:1,patience:1,agents:1,serviceSeconds:0});
+near(q.served,1-Math.exp(-1));near(q.abandon,Math.exp(-1));near(q.service,Math.exp(-1));near(q.served+q.abandon,1);near(q.queue,q.abandon);
+const long=queueStats({arrivalRate:1,aht:1,patience:1,agents:1,serviceSeconds:100});near(long.service,long.served);
+for(const n of [1,2,10,78,120]){
+ const s=queueStats({arrivalRate:.25,aht:330,patience:90,agents:n,serviceSeconds:120});
+ near(s.served+s.abandon,1,1e-9);assert(s.service<=s.served+1e-12);assert(s.wait>=0);assert(s.abandonWait>=0);assert(s.occupancy>=0&&s.occupancy<=1);
+ near(s.wait*s.served+s.abandonWait*s.abandon,s.queue/.25,1e-8);
+}
+const shared={agentConfig:structuredClone(defaults),agentValues:{agents:121,support:0,shrink:0,acw:7200}};
+const args={queued:7500,aht:330,config:structuredClone(campaignDefaults),values:campaignInitial().values,...shared};
+const base=planCampaign(args);
+assert(base.feasible);assert.equal(base.active,78);assert.equal(base.headcount,102);
+assert(base.stats.abandon<=.08);assert(base.stats.wait<=120);assert(base.stats.service>=.77);
+const previous=queueStats({arrivalRate:7500/30600,aht:330,patience:90,agents:base.active-1,serviceSeconds:120});assert(previous.abandon>.08||previous.wait>120||previous.service<.77);
+assert(planCampaign({...args,queued:10000}).headcount>base.headcount);
+assert(planCampaign({...args,aht:360}).headcount>=base.headcount);
+assert(planCampaign({...args,values:{...args.values,abandonRate:2}}).headcount>=base.headcount);
+assert(planCampaign({...args,values:{...args.values,waitTarget:1}}).headcount>=base.headcount);
+assert(planCampaign({...args,values:{...args.values,serviceTarget:99}}).headcount>=base.headcount);
+assert.equal(planCampaign({...args,agentValues:{...shared.agentValues,shrink:10}}).headcount,base.headcount+10);
+assert.equal(planCampaign({...args,agentValues:{...shared.agentValues,support:10}}).headcount,base.headcount-10);
+assert(planCampaign({...args,agentValues:{...shared.agentValues,acw:5400}}).headcount<=base.headcount);
+assert.equal(planCampaign({...args,queued:0}).headcount,0);
+assert.equal(planCampaign({...args,config:{...args.config,maxAgents:1}}).feasible,false);
+assert.equal(planCampaign({...args,agentValues:{...shared.agentValues,acw:30600}}).feasible,false);
+// Independent seeded event simulation validates served-only wait and service-level CDF.
+function simulate({lambda,aht,patience,agents,T},seed=123456){
+ const random=()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return (seed+.5)/4294967296;},exp=mean=>-Math.log(random())*mean;
+ const heap=[],push=e=>{heap.push(e);let i=heap.length-1;while(i){const p=(i-1)>>1;if(heap[p].t<=e.t)break;heap[i]=heap[p];i=p;}heap[i]=e;},pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1].t<heap[j].t)j++;if(last.t<=heap[j].t)break;heap[i]=heap[j];i=j;}heap[i]=last;}return first;};
+ let arrived=0,busy=0,head=0,served=0,abandoned=0,within=0,wait=0;const waiting=[],warm=10000,total=160000;
+ const start=(j,t)=>{j.state='served';busy++;if(j.measured){served++;wait+=t-j.at;if(t-j.at<=T)within++;}push({t:t+exp(aht),kind:'end'});};
+ push({t:exp(1/lambda),kind:'arrival'});
+ while(heap.length){const e=pop();if(e.kind==='arrival'){arrived++;const j={at:e.t,state:'waiting',measured:arrived>warm};if(busy<agents)start(j,e.t);else{waiting.push(j);push({t:e.t+exp(patience),kind:'abandon',j});}if(arrived<total)push({t:e.t+exp(1/lambda),kind:'arrival'});}
+ else if(e.kind==='abandon'){if(e.j.state==='waiting'){e.j.state='abandoned';if(e.j.measured)abandoned++;}}
+ else{busy--;while(head<waiting.length&&waiting[head].state!=='waiting')head++;if(head<waiting.length)start(waiting[head++],e.t);}}
+ return {abandon:abandoned/(total-warm),service:within/(total-warm),wait:wait/served};
+}
+for(const cfg of [{lambda:1,aht:1,patience:1,agents:1,T:.5},{lambda:7500/30600,aht:330,patience:90,agents:78,T:5}]){
+ const exact=queueStats({arrivalRate:cfg.lambda,aht:cfg.aht,patience:cfg.patience,agents:cfg.agents,serviceSeconds:cfg.T}),sim=simulate(cfg);
+ near(exact.abandon,sim.abandon,.006);near(exact.service,sim.service,.008);near(exact.wait,sim.wait,cfg.aht===1?.008:.45);
+}
+console.log('Campaign checks passed: flow balance, analytic cases, independent queue simulation, minimal staffing, linked totals, constraints and edge cases.');
+
