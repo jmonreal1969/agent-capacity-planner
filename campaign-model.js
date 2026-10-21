@@ -17,9 +17,11 @@ export function validateCampaignState(data){
   if(next.config.abandonRangeVersion!==1){next.config.abandonRangeVersion=1;next.config.limits.abandonRate=[0,20,.1,clamp(next.config.limits.abandonRate[3],0,20)];next.values.abandonRate=clamp(next.values.abandonRate,0,20);}
   if(next.config.benchmarks===undefined)next.config.benchmarks={serviceTarget:75,abandonRate:3};
   for(const k of ['serviceTarget','abandonRate'])if(!Number.isFinite(next.config.benchmarks?.[k])||next.config.benchmarks[k]<0||next.config.benchmarks[k]>100)throw Error('Check Campaign '+k+' benchmark.');
+  if(next.focus===undefined)next.focus='all';
+  if(!['all','abandonRate','waitTarget','serviceTarget'].includes(next.focus))throw Error('Check the Campaign planning target.');
   return next;
 }
-export function campaignInitial(config=campaignDefaults){return {version:1,config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
+export function campaignInitial(config=campaignDefaults){return {version:1,focus:'all',config:copy(config),values:Object.fromEntries(Object.entries(config.limits).map(([k,l])=>[k,l[3]])),day:0};}
 export function campaignCounts(queued,rate){const abandoned=Math.round(queued*clamp(rate,0,100)/100);return {queued,abandoned,handled:queued-abandoned};}
 
 export function queueStats({arrivalRate,aht,patience,agents,serviceSeconds}){
@@ -53,20 +55,22 @@ export function queueStats({arrivalRate,aht,patience,agents,serviceSeconds}){
   return {served:clamp(served,0,1),abandon,service:clamp(service,0,served),wait:served>0?servedWait/served:Infinity,abandonWait:abandon>1e-14?Math.max(0,(allWait-servedWait)/abandon):0,queue,occupancy:busy/agents,immediate};
 }
 
-export function planCampaign({queued,aht,config,values,agentConfig,agentValues}){
-  const target=campaignCounts(queued,values.abandonRate),availability=Math.max(0,(agentConfig.shift*3600-agentValues.acw)/(agentConfig.shift*3600));
-  if(!queued)return {target,feasible:true,active:0,headcount:0,gap:-agentValues.agents,stats:queueStats({arrivalRate:0,aht,patience:values.patience,agents:0,serviceSeconds:config.serviceSeconds}),modeled:{handled:0,abandoned:0}};
-  if(availability<=0)return {target,feasible:false,reason:'Daily ACW leaves no call-handling time. Reduce ACW in Agent view.',active:null,headcount:null};
+export function planCampaign({queued,aht,config,values,agentConfig,agentValues,focus='all'}){
+  if(!['all','abandonRate','waitTarget','serviceTarget'].includes(focus))throw Error('Invalid Campaign planning target.');
+  const target=campaignCounts(queued,values.abandonRate),availability=Math.max(0,(agentConfig.shift*3600-agentValues.acw)/(agentConfig.shift*3600)),targetKeys=['abandonRate','waitTarget','serviceTarget'];
+  const checks={abandonRate:s=>s.abandon<=values.abandonRate/100+1e-10,waitTarget:s=>s.wait<=values.waitTarget+1e-8,serviceTarget:s=>s.service>=values.serviceTarget/100-1e-10};
+  if(!queued)return {target,focus,feasible:true,active:0,headcount:0,gap:-agentValues.agents,requirements:Object.fromEntries(targetKeys.map(k=>[k,{active:0,headcount:0}])),drivers:[],goalStatus:null,allMet:true,stats:queueStats({arrivalRate:0,aht,patience:values.patience,agents:0,serviceSeconds:config.serviceSeconds}),modeled:{handled:0,abandoned:0}};
+  if(availability<=0)return {target,focus,feasible:false,reason:'Daily ACW leaves no call-handling time. Reduce ACW in Agent view.',active:null,headcount:null};
   const cache=new Map(),evaluate=n=>{if(!cache.has(n))cache.set(n,queueStats({arrivalRate:queued/(config.openHours*3600),aht,patience:values.patience,agents:n,serviceSeconds:config.serviceSeconds}));return cache.get(n);};
-  const meets=s=>s.abandon<=values.abandonRate/100+1e-10&&s.wait<=values.waitTarget+1e-8&&s.service>=values.serviceTarget/100-1e-10;
+  const scheduled=n=>Math.max(0,Math.ceil(n/availability+agentValues.shrink-agentValues.support*agentConfig.contribution/100-1e-9));
   try{
-    const best=evaluate(config.maxAgents);
-    if(!meets(best))return {target,feasible:false,reason:'Targets cannot be met within the '+config.maxAgents+' active-agent search limit.',active:null,headcount:null,stats:best};
-    let lo=1,hi=config.maxAgents;while(lo<hi){const mid=Math.floor((lo+hi)/2);if(meets(evaluate(mid)))hi=mid;else lo=mid+1;}
-    const stats=evaluate(lo),headcount=Math.max(0,Math.ceil(lo/availability+agentValues.shrink-agentValues.support*agentConfig.contribution/100-1e-9));
-    const abandoned=Math.round(queued*stats.abandon);
-    return {target,feasible:true,active:lo,headcount,gap:headcount-agentValues.agents,stats,availability,modeled:{abandoned,handled:queued-abandoned}};
-  }catch(e){return {target,feasible:false,active:null,headcount:null,reason:e.message};}
+    const best=evaluate(config.maxAgents),requirements={};
+    for(const k of targetKeys){if(!checks[k](best)){requirements[k]={active:null,headcount:null};continue;}let lo=1,hi=config.maxAgents;while(lo<hi){const mid=Math.floor((lo+hi)/2);if(checks[k](evaluate(mid)))hi=mid;else lo=mid+1;}requirements[k]={active:lo,headcount:scheduled(lo)};}
+    const selected=focus==='all'?targetKeys:[focus];
+    if(selected.some(k=>requirements[k].active===null))return {target,focus,requirements,feasible:false,reason:'Selected targets cannot be met within the '+config.maxAgents+' active-agent search limit.',active:null,headcount:null};
+    const active=Math.max(...selected.map(k=>requirements[k].active)),stats=evaluate(active),headcount=scheduled(active),goalStatus=Object.fromEntries(targetKeys.map(k=>[k,checks[k](stats)])),drivers=selected.filter(k=>requirements[k].active===active),abandoned=Math.round(queued*stats.abandon);
+    return {target,focus,feasible:true,active,headcount,gap:headcount-agentValues.agents,stats,availability,requirements,drivers,goalStatus,allMet:Object.values(goalStatus).every(Boolean),modeled:{abandoned,handled:queued-abandoned}};
+  }catch(e){return {target,focus,feasible:false,active:null,headcount:null,reason:e.message};}
 }
 
 export function scaleCampaignDemand(days,selected,queued,max){const anchor=days[selected];return days.map((d,i)=>i===selected?Math.round(clamp(queued,0,max)):Math.round(clamp(anchor>0?d*queued/anchor:queued,0,max)));}

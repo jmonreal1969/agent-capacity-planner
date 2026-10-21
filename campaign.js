@@ -34,8 +34,8 @@ export function createCampaignController({getShared,updateShared,updateSharedDef
   refresh();
  }
  function refresh(){
-  const s=getShared(),key=JSON.stringify([s.config.days,s.config.shift,s.config.contribution,s.values.aht,s.values.acw,s.values.shrink,s.values.support,s.values.agents,state.config,state.values]);
-  if(key!==memoKey){const oldPlans=plans;plans=s.config.days.map(queued=>planCampaign({queued,aht:s.values.aht,config:state.config,values:state.values,agentConfig:s.config,agentValues:s.values}));headcountNote=lastAbandonRate!==null&&lastAbandonRate!==state.values.abandonRate&&oldPlans.length===5&&s.config.days.some(d=>d>0)&&plans.every((p,i)=>p.feasible&&oldPlans[i].feasible&&p.headcount===oldPlans[i].headcount)?'Targets updated. Headcount is unchanged because whole-agent rounding or the wait/service targets set the requirement.':'';lastAbandonRate=state.values.abandonRate;memoKey=key;}
+  const s=getShared(),key=JSON.stringify([s.config.days,s.config.shift,s.config.contribution,s.values.aht,s.values.acw,s.values.shrink,s.values.support,s.values.agents,state.config,state.values,state.focus]);
+  if(key!==memoKey){const oldPlans=plans;plans=s.config.days.map(queued=>planCampaign({queued,aht:s.values.aht,config:state.config,values:state.values,agentConfig:s.config,agentValues:s.values,focus:state.focus}));headcountNote=lastAbandonRate!==null&&lastAbandonRate!==state.values.abandonRate&&oldPlans.length===5&&s.config.days.some(d=>d>0)&&plans.every((p,i)=>p.feasible&&oldPlans[i].feasible&&p.headcount===oldPlans[i].headcount)?'Targets updated. Headcount is unchanged because whole-agent rounding or the wait/service targets set the requirement.':'';lastAbandonRate=state.values.abandonRate;memoKey=key;}
   const plan=plans[state.day],stats=plan.stats,q=s.config.days[state.day];
   $('campaignRequired').textContent=plan.feasible?fmt(plan.headcount):'—';
   $('campaignGap').textContent=!plan.feasible?'No feasible estimate':plan.gap>0?fmt(plan.gap)+' above '+fmt(s.values.agents)+' primary agents':fmt(Math.abs(plan.gap))+' below '+fmt(s.values.agents)+' primary agents';
@@ -44,6 +44,14 @@ export function createCampaignController({getShared,updateShared,updateSharedDef
   $('campaignService').textContent=q&&plan.feasible?fmt(stats.service*100,1)+'%':'—';
   $('campaignWithin').textContent='Answered within '+fmt(state.config.serviceSeconds)+' seconds';
   $('campaignTargets').textContent='Targets: ≤ '+fmt(state.values.abandonRate,2)+'% abandoned · ≤ '+fmt(state.values.waitTarget)+' sec average wait · ≥ '+fmt(state.values.serviceTarget,1)+'% answered within '+fmt(state.config.serviceSeconds)+' sec';
+  $('campaignFocus').value=state.focus;
+  const targetNames={abandonRate:'Abandonment',waitTarget:'Average wait',serviceTarget:'Service level'},requirements=plan.requirements;
+  $('campaignDriver').textContent=!q?'No staffing needed for zero demand':!plan.feasible?'No feasible staffing for selected targets':'Headcount driven by: '+plan.drivers.map(k=>targetNames[k]).join(' + ')+(state.focus!=='all'?' (single-target scenario)':'');
+  $('campaignRequirements').textContent=requirements?'Headcount for each target separately: '+Object.entries(requirements).map(([k,r])=>targetNames[k]+' '+(r.headcount===null?'beyond limit':fmt(r.headcount))).join(' · '):'';
+  const met=plan.goalStatus?Object.values(plan.goalStatus).filter(Boolean).length:0;
+  $('campaignGoalStatus').textContent=!q?'No queued calls':!plan.feasible?'Review targets / staffing limit':met===3?'All 3 service goals met':met+' of 3 service goals met — review goals below';
+  $('campaignGoalStatus').classList.toggle('campaign-goals-missed',q>0&&(!plan.feasible||!plan.allMet));
+  if(q&&plan.feasible){const actual={abandonRate:fmt(stats.abandon*100,2)+'%',waitTarget:fmt(stats.wait,1)+' sec',serviceTarget:fmt(stats.service*100,1)+'%'},goals={abandonRate:'≤ '+fmt(state.values.abandonRate,2)+'%',waitTarget:'≤ '+fmt(state.values.waitTarget)+' sec',serviceTarget:'≥ '+fmt(state.values.serviceTarget,1)+'% within '+fmt(state.config.serviceSeconds)+' sec'};$('campaignTargets').innerHTML=Object.keys(targetNames).map(k=>'<span class="campaign-goal-check '+(plan.goalStatus[k]?'met':'missed')+'">'+(plan.goalStatus[k]?'✓ Met · ':'✕ Missed · ')+targetNames[k]+': '+actual[k]+' / goal '+goals[k]+'</span>').join('');}
   $('campaignPredicted').textContent=plan.feasible&&q?'Predicted: '+fmt(plan.modeled.handled)+' handled · '+fmt(plan.modeled.abandoned)+' abandoned ('+fmt(stats.abandon*100,2)+'%) · '+fmt(stats.occupancy*100,1)+'% occupancy.':q?(plan.reason||'Review the planning inputs.'):'No staffing required for zero queued calls.';if(headcountNote)$('campaignPredicted').textContent+=' '+headcountNote;
   $('campaignPredicted').classList.toggle('campaign-error',!plan.feasible);
   $('campaignShared').textContent='Agent settings: '+fmt(s.config.shift,1)+'h shift · '+fmt(s.values.acw/60,1)+' min daily ACW · '+fmt(s.values.shrink)+' unavailable · '+fmt(s.values.support)+' support HC';
@@ -81,9 +89,10 @@ export function createCampaignController({getShared,updateShared,updateSharedDef
  f.elements.campaignAdminDay.onchange=e=>{f.elements.campaignQueued.value=getShared().config.days[Number(e.target.value)];adminCounts();};
  for(const name of ['campaignQueued','campaignDefault-abandonRate'])f.elements[name].oninput=()=>adminCounts();
  f.elements.campaignHandled.onchange=()=>adminCounts('handled');f.elements.campaignAbandoned.onchange=()=>adminCounts('abandoned');
+ $('campaignFocus').onchange=e=>{state.focus=e.target.value;headcountNote='';refresh();};
  $('campaignDayChoice').onchange=e=>{state.day=Number(e.target.value);refresh();};
  
  build();refresh();
- return {refresh,adminFill,exportState:()=>copy(state),restore:data=>{state=validateCampaignState(data);memoKey='';build();refresh();},reset:()=>{state.values=Object.fromEntries(Object.entries(state.config.limits).map(([k,l])=>[k,l[3]]));refresh();}};
+ return {refresh,adminFill,exportState:()=>copy(state),restore:data=>{state=validateCampaignState(data);memoKey='';build();refresh();},reset:()=>{state.focus='all';state.values=Object.fromEntries(Object.entries(state.config.limits).map(([k,l])=>[k,l[3]]));refresh();}};
 }
 

@@ -312,3 +312,20 @@ body[data-dashboard="campaign"] .intro{display:none}
 .campaign-slider .campaign-benchmark-pair.campaign-benchmark-goal{left:calc(50% - 36px);width:36px}
 .campaign-slider .campaign-benchmark-pair.campaign-benchmark-current{left:50%;width:36px}
 .campaign-slider .campaign-input-unit{display:flex;justify-content:center;gap:6px}
+
+/* Explain staffing constraints and make single-target scenarios reviewable. */
+.campaign-planning-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:5px}
+.campaign-planning-row label{display:flex;align-items:center;gap:8px;font-size:10px}
+.campaign-planning-row select{width:auto;margin:0;padding:4px 8px;font-size:10px}
+#campaignGoalStatus{font-size:10px;color:#147751}
+#campaignGoalStatus.campaign-goals-missed{color:#bc4137}
+#campaignDriver{font-weight:600}
+#campaignTargets{display:flex;flex-wrap:wrap;gap:4px 12px}
+.campaign-goal-check{font-size:10px;color:#147751}
+.campaign-goal-check.missed{color:#bc4137;font-weight:600}
+@media screen and (min-width:1060px) and (max-height:900px){.campaign-planning-row{margin-bottom:2px}.campaign-goal-check{font-size:9px}.campaign-planning-row select{padding:2px 6px}#campaignRequirements{margin-top:2px}}
+
+/* Keep the weekly outlook visible as staffing explanations expand. */
+#campaignShared{display:none}
+@media screen and (min-width:1060px) and (min-height:901px){#campaign .campaign-slider .track-area{height:60px}}
+@media screen and (min-width:1060px) and (max-height:900px){.campaign-staff-battery{height:52px}.campaign-result small{margin-top:2px}.campaign-planning-row{margin-bottom:0}}
