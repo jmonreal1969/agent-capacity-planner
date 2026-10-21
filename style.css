@@ -296,3 +296,6 @@ body[data-dashboard="campaign"] .intro{display:none}
 .campaign-staff-battery .inside{justify-content:flex-end}
 .campaign-staff-battery.number-on-empty .campaign-battery-number{color:var(--ink);text-shadow:none}
 .dot.spare{background:#eef1e9;box-shadow:inset 0 0 0 1px #c3cdbb}
+
+.benchmark-domestic{color:#0067b8}
+.threshold-mark.benchmark-domestic:before{border-color:#0078d4}
