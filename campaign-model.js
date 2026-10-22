@@ -3,7 +3,7 @@
 // with Impatient Customers. All rates below use seconds.
 const copy=x=>JSON.parse(JSON.stringify(x));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export const campaignDefaults={version:1,queueAssumptionsVersion:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},callsBenchmark:84,callsCurrentBenchmark:69.2,headcountMax:175,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
+export const campaignDefaults={version:1,queueAssumptionsVersion:1,abandonRangeVersion:1,benchmarks:{serviceTarget:75,abandonRate:3},callsBenchmark:85,performanceGoalsVersion:1,callsCurrentBenchmark:69.2,headcountMax:175,openHours:8.5,serviceSeconds:120,maxAgents:1000,limits:{abandonRate:[0,20,.1,8],waitTarget:[0,600,1,120],patience:[1,600,1,90],serviceTarget:[0,100,.1,77]}};
 export function validateCampaignState(data){
   if(!data||data.version!==1||!data.config||!data.values)throw Error('Unsupported Campaign backup.');
   const c=data.config;
@@ -19,7 +19,8 @@ export function validateCampaignState(data){
   for(const k of ['serviceTarget','abandonRate'])if(!Number.isFinite(next.config.benchmarks?.[k])||next.config.benchmarks[k]<0||next.config.benchmarks[k]>100)throw Error('Check Campaign '+k+' benchmark.');
   if(next.focus===undefined)next.focus='all';
   if(!['all','abandonRate','waitTarget','serviceTarget'].includes(next.focus))throw Error('Check the Campaign planning target.');
-  if(next.config.callsBenchmark===undefined)next.config.callsBenchmark=84;
+  if(next.config.callsBenchmark===undefined)next.config.callsBenchmark=85;
+  if(next.config.performanceGoalsVersion!==1){next.config.callsBenchmark=85;next.config.performanceGoalsVersion=1;}
   if(!Number.isFinite(next.config.callsBenchmark)||next.config.callsBenchmark<=0||next.config.callsBenchmark>10000)throw Error('Check the calls-per-agent benchmark.');
   // Patience moved from a temporary scenario slider into an Admin assumption.
   // Use its configured default once; preserve explicit Admin defaults thereafter.

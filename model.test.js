@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults,upgradeCurrentTimes,upgradeSupportRange} from './model.js';
+import assert from 'node:assert/strict';import {defaults,metrics,solve,dayStats,validate,migrateLegacy,upgradeSupportConfig,upgradeBenchmarks,upgradeOperatingDefaults,upgradeCurrentTimes,upgradeSupportRange,upgradePerformanceGoals} from './model.js';
 const c={...structuredClone(defaults),contribution:0};c.limits.aht=[180,420,1,330];const v={agents:80,support:8,shrink:20,aht:300,acw:5400,calls:60};
 let m=metrics(v,c);assert.equal(m.productive,25200);assert.equal(m.available,60);assert.equal(m.activePer,84);assert.equal(m.per,84);assert.equal(m.capacity,5040);
 assert.equal(metrics({...v,shrink:0},c).capacity,6720);assert.equal(metrics({...v,acw:0},c).capacity,6120);assert.equal(metrics({...v,acw:10800},c).capacity,3960);
@@ -25,7 +25,7 @@ const fullPoolSolve=solve(v,reserveConfig,84,4800,'aht');assert.ok(Math.abs(metr
 assert.equal(upgradeSupportConfig({...defaults,supportModelVersion:1,contribution:0}).contribution,100);
 
 assert.equal(defaults.limits.agents[3],121);
-assert.deepEqual(defaults.benchmarks,{agents:121,acwGoal:5400,acwCurrent:7200,ahtGoal:300,ahtCurrent:338});
+assert.deepEqual(defaults.benchmarks,{agents:121,acwGoal:6300,acwCurrent:7200,ahtGoal:286,ahtCurrent:338});
 const preBenchmarks=structuredClone(defaults);delete preBenchmarks.benchmarks;delete preBenchmarks.benchmarkVersion;preBenchmarks.limits.agents[3]=80;
 const withBenchmarks=upgradeBenchmarks(preBenchmarks);validate(withBenchmarks);assert.equal(withBenchmarks.limits.agents[3],121);assert.equal(preBenchmarks.limits.agents[3],80);
 const custom=structuredClone(defaults);custom.benchmarks.agents=117;custom.limits.agents[3]=117;custom.benchmarks.ahtCurrent=320;validate(custom);assert.equal(upgradeBenchmarks(custom),custom);
@@ -56,3 +56,7 @@ const limitedSupport=upgradeOperatingDefaults(previousSupportRange);validate(lim
 const customSupportRange=structuredClone(limitedSupport);customSupportRange.limits.support=[0,50,1,0];assert.equal(upgradeSupportRange(customSupportRange),customSupportRange);
 assert.ok(metrics({...v,support:60},defaults).capacity>metrics({...v,support:0},defaults).capacity);
 console.log('Support range 0–60 migrates saved settings once, preserves Admin edits, and adds call capacity.');
+
+const previousGoals=structuredClone(defaults);delete previousGoals.performanceGoalsVersion;previousGoals.benchmarks.ahtGoal=300;previousGoals.benchmarks.acwGoal=5400;const revisedGoals=upgradeOperatingDefaults(previousGoals);validate(revisedGoals);assert.equal(revisedGoals.benchmarks.ahtGoal,286);assert.equal(revisedGoals.benchmarks.acwGoal,6300);assert.equal(revisedGoals.acwLimit,105);assert.equal(previousGoals.benchmarks.acwGoal,5400);assert.equal(revisedGoals.benchmarks.ahtCurrent,338);assert.equal(revisedGoals.benchmarks.acwCurrent,7200);const laterGoals=structuredClone(revisedGoals);laterGoals.benchmarks.ahtGoal=290;laterGoals.benchmarks.acwGoal=6000;assert.equal(upgradePerformanceGoals(laterGoals),laterGoals);
+const revisedGoalMetrics=metrics({...v,agents:121,support:0,shrink:0,aht:286,acw:6300},defaults);assert.ok(Math.abs(revisedGoalMetrics.per-85)<.05);assert.equal(revisedGoalMetrics.capacity,10280);
+console.log('AHT4:46 and ACW105-minute goals migrate once, preserve current references and later edits, and yield about85 calls per agent.');

@@ -22,7 +22,7 @@ Reserve-support configuration version 2 converts saved 0% reserve contributions 
 
 ## Campaign performance scenarios
 
-Campaign is now a forward simulator: keep staffing fixed and estimate handled calls, answered wait, abandonment counts/rate, and service level for each weekday. Four visible controls are primary headcount, calls per available agent, AHT, and daily ACW. These share Agent settings. Calls per agent is derived as (shift seconds - daily ACW) / AHT; editing that control solves AHT at fixed ACW within the shared range and one-second rounding. The performance goal is 84 calls at 5:00 AHT and 90:00 daily ACW in an 8.5-hour shift.
+Campaign is now a forward simulator: keep staffing fixed and estimate handled calls, answered wait, abandonment counts/rate, and service level for each weekday. Four visible controls are primary headcount, calls per available agent, AHT, and daily ACW. These share Agent settings. Calls per agent is derived as (shift seconds - daily ACW) / AHT; editing that control solves AHT at fixed ACW within the shared range and one-second rounding. The performance goal is approximately85 calls at 4:46 AHT and 105:00 daily ACW in an 8.5-hour shift.
 
 Available equivalents include primary agents minus unavailable headcount plus weighted support. Theoretical capacity uses all available productive staff time. For Erlang A queue outcomes, productive staff time is spread across operating hours and concurrent agents are rounded down conservatively to whole agents. This may leave predicted answers below theoretical capacity. Predicted handled and abandoned whole-call counts reconcile to incoming demand; answers are capped by theoretical capacity. Wait refers to answered calls only. Service level uses all queued calls as denominator and the Admin answer threshold (120 seconds by default).
 
@@ -30,7 +30,7 @@ Goals in Admin are comparisons: default maximum abandonment 3%, maximum answered
 
 Caller patience (90 seconds) and operating hours are under advanced Campaign settings. Patience is an assumption about all callers, rather than the observed mean among abandoned calls. The stationary Erlang A model assumes uniform mean daily demand, random arrivals, exponential service/patience, one unlimited first-come queue, and no retries/transfers or separate occupancy ceiling. These are planning estimates, not measured performance or interval forecasts. Reference: Garnett, Mandelbaum & Reiman, *Designing a Call Center with Impatient Customers* (2002).
 
-Older browser settings/backups retain their settings identity and receive the 84-call benchmark when missing. Previous reverse-planning functions remain covered by model tests for compatibility; the Campaign UI uses forward outcomes.
+Older browser settings/backups retain their settings identity and receive the 85-call goal benchmark when missing. Previous reverse-planning functions remain covered by model tests for compatibility; the Campaign UI uses forward outcomes.
 
 ## Downloading and restoring backups
 
