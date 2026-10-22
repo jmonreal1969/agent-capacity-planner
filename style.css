@@ -403,3 +403,8 @@ body[data-dashboard="campaign"] .intro{display:none}
 
 /* Keep every Campaign weekday card border consistent. */
 .campaign-forward .campaign-day.selected{border-color:var(--line);box-shadow:none}
+
+/* Supervisor access keeps shared configuration and incoming demand read-only. */
+body[data-access-role="supervisor"] #admin,body[data-access-role="supervisor"] #adminTab,body[data-access-role="supervisor"] #downloadBackup,body[data-access-role="supervisor"] #shareSupervisor,body[data-access-role="supervisor"] #supervisorShare,body[data-access-role="supervisor"] .day-range{display:none!important}
+body[data-access-role="supervisor"] input[readonly]{background:transparent;border-color:transparent;cursor:default}
+#supervisorShare{margin-bottom:14px}#supervisorLink{font-size:11px;width:100%}

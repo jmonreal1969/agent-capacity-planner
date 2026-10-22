@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/gate.js": {
-      "includeFiles": "{index.html,style.css,app.js,model.js,campaign.js,campaign-model.js}",
+      "includeFiles": "{index.html,style.css,app.js,model.js,campaign.js,campaign-model.js,auth-access.js}",
       "maxDuration": 30
     }
   },
