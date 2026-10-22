@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {createHmac} from 'node:crypto';import handler from './api/gate.js';import {defaults} from './model.js';import {campaignDefaults} from './campaign-model.js';import {validateSharedSettings,sealSettings,openSettings} from './auth-access.js';
-process.env.CAPACITY_PIN='672941';process.env.CAPACITY_SUPERVISOR_PIN='918273';process.env.CAPACITY_SESSION_SECRET='test-only-signing-key-not-for-deployment';
+process.env.CAPACITY_PIN='672941';process.env.CAPACITY_SUPERVISOR_PIN='Sup1';process.env.CAPACITY_SESSION_SECRET='test-only-signing-key-not-for-deployment';
 async function request(url='/',method='GET',body=undefined,extra={}){const req={url,method,body,headers:{host:'planner.test','x-vercel-forwarded-for':'192.0.2.1',...extra},socket:{remoteAddress:'192.0.2.1'}},res={statusCode:200,headers:{},setHeader(k,v){this.headers[k.toLowerCase()]=v;},end(v=''){this.body=String(v);}};await handler(req,res);return res;}
 let r=await request();assert.equal(r.statusCode,200);assert.match(r.body,/Access PIN/);assert.match(r.body,/every open or refresh/);assert.ok(!r.body.includes('SCENARIO BUILDER'));assert.match(r.headers['cache-control'],/no-store/);
 for(const path of ['/app.js','/style.css','/model.js','/campaign.js','/campaign-model.js','/README.md','/api/gate.js']){r=await request(path);assert.equal(r.statusCode,401);}
@@ -27,17 +27,19 @@ r=await request('/supervisor-link','POST',settings);assert.equal(r.statusCode,40
 r=await request('/supervisor-link','POST',settings,{cookie:session,origin:'https://evil.test'});assert.equal(r.statusCode,403);
 r=await request('/supervisor-link','POST',settings,{cookie:session,origin:'https://planner.test'});assert.equal(r.statusCode,200);const link=JSON.parse(r.body).url,view=new URL(link,'https://planner.test').searchParams.get('view');assert.ok(view.startsWith('v1.'));assert.ok(view.length<3400);assert.ok(!r.body.includes('10452'));
 r=await request(link);assert.match(r.body,/name="view"/);assert.ok(!r.body.includes('SCENARIO BUILDER'));
-r=await request('/login','POST',{pin:'918273'},{'x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,403);assert.match(r.body,/Supervisor link/);
-r=await request('/login','POST',{pin:'918273',view:view+'x'},{'x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,403);
-r=await request('/login','POST',{pin:'918273',view},{origin:'https://planner.test','x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,303);assert.equal(r.headers.location,link);const supervisorCookies=r.headers['set-cookie'].filter(c=>!c.includes('Max-Age=0')).map(c=>c.split(';')[0]).join('; ');const supervisorSession=supervisorCookies.split('; ').filter(c=>!c.startsWith('__Host-capacity_entry=')).join('; ');
+r=await request('/login','POST',{pin:'Sup1'},{'x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,403);assert.match(r.body,/Supervisor link/);
+r=await request('/login','POST',{pin:'Sup1',view:view+'x'},{'x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,403);
+r=await request('/login','POST',{pin:'sup1',view},{'x-vercel-forwarded-for':'192.0.2.4'});assert.equal(r.statusCode,401);assert.match(r.body,/minlength="4"/);assert.match(r.body,/inputmode="text"/);
+r=await request('/login','POST',{pin:'978025',view},{'x-vercel-forwarded-for':'192.0.2.4'});assert.equal(r.statusCode,401);
+r=await request('/login','POST',{pin:'Sup1',view},{origin:'https://planner.test','x-vercel-forwarded-for':'192.0.2.3'});assert.equal(r.statusCode,303);assert.equal(r.headers.location,link);const supervisorCookies=r.headers['set-cookie'].filter(c=>!c.includes('Max-Age=0')).map(c=>c.split(';')[0]).join('; ');const supervisorSession=supervisorCookies.split('; ').filter(c=>!c.startsWith('__Host-capacity_entry=')).join('; ');
 r=await request(link,'GET',undefined,{cookie:supervisorCookies});assert.match(r.body,/data-access-role="supervisor"/);
-r=await request('/access.js','GET',undefined,{cookie:supervisorSession});assert.equal(r.statusCode,200);assert.match(r.body,/"role":"supervisor"/);assert.match(r.body,/10452/);assert.ok(!r.body.includes('918273'));assert.ok(!r.body.includes('672941'));
+r=await request('/access.js','GET',undefined,{cookie:supervisorSession});assert.equal(r.statusCode,200);assert.match(r.body,/"role":"supervisor"/);assert.match(r.body,/10452/);assert.ok(!r.body.includes('Sup1'));assert.ok(!r.body.includes('672941'));
 r=await request('/supervisor-link','POST',settings,{cookie:supervisorSession});assert.equal(r.statusCode,403);
 r=await request('/access.js','GET',undefined,{cookie:supervisorSession.replace(view,view.slice(0,-1)+'x')});assert.equal(r.statusCode,401);
-r=await request(link,'GET',undefined,{cookie:supervisorSession});assert.match(r.body,/Access PIN/);assert.match(r.body,/name="view"/);
+r=await request(link,'GET',undefined,{cookie:supervisorSession});assert.match(r.body,/Supervisor access code/);assert.match(r.body,/name="view"/);
 r=await request('/access.js','GET',undefined,{cookie:session});assert.match(r.body,/"role":"admin"/);assert.match(r.body,/"settings":null/);
 r=await request('/auth-access.js','GET',undefined,{cookie:supervisorSession});assert.equal(r.statusCode,404);
-const originalSupervisorPin=process.env.CAPACITY_SUPERVISOR_PIN;process.env.CAPACITY_SUPERVISOR_PIN='918274';r=await request('/access.js','GET',undefined,{cookie:supervisorSession});assert.equal(r.statusCode,401);process.env.CAPACITY_SUPERVISOR_PIN=originalSupervisorPin;
+const originalSupervisorPin=process.env.CAPACITY_SUPERVISOR_PIN;process.env.CAPACITY_SUPERVISOR_PIN='Sup2';r=await request('/access.js','GET',undefined,{cookie:supervisorSession});assert.equal(r.statusCode,401);process.env.CAPACITY_SUPERVISOR_PIN=originalSupervisorPin;
 const safeSettings=validateSharedSettings(settings),sealed=sealSettings(safeSettings,key);assert.deepEqual(openSettings(sealed,key),safeSettings);assert.equal(openSettings(sealed+'x',key),null);assert.equal(openSettings(sealed,Buffer.alloc(32)),null);
 console.log('Supervisor authorization passed: encrypted immutable settings, PIN role binding, no shared-write permission, cross-origin denial, tamper protection, credential rotation and protected server source.');
 delete process.env.CAPACITY_PIN;r=await request();assert.equal(r.statusCode,503);

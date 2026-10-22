@@ -40,7 +40,7 @@ The homepage **Download backup** button saves a JSON file containing both dashbo
 
 ## Admin and Supervisor access
 
-The existing CAPACITY_PIN is the Admin credential. CAPACITY_SUPERVISOR_PIN is a separate six-digit sensitive environment variable. Both roles use signed HttpOnly sessions, a one-page entry grant, and PIN-on-refresh; sessions are bound to the credential version and the page bootstrap is bound to the same session.
+The existing CAPACITY_PIN is the Admin credential. CAPACITY_SUPERVISOR_PIN is a separate case-sensitive access code (4–64 letters or numbers), stored as a sensitive environment variable. The Admin PIN remains six numeric digits. Both roles use signed HttpOnly sessions, a one-page entry grant, and PIN-on-refresh; sessions are bound to the credential version and the page bootstrap is bound to the same session.
 
 Admin can use Menu > Create Supervisor link to share the current saved Agent configuration and Campaign configuration. The server validates the settings, compresses them, and encrypts/authenticates them with AES-256-GCM using a derived server key. The URL carries the protected snapshot; no database is required. Supervisor sign-in requires both this link and the Supervisor PIN. The snapshot is bound to the Supervisor session and stored only in an HttpOnly cookie. Create a new link after changing the settings you want to share.
 
