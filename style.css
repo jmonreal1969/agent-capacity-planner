@@ -464,3 +464,40 @@ body[data-dashboard="interval"] .intro{display:none}
 @media screen and (min-width:1060px) and (max-height:900px){#interval .panel{padding:14px 20px}#interval h2{font-size:19px}.interval-inputs{margin:12px 0 6px}.interval-summary strong{font-size:27px}.interval-chart svg{max-height:225px}.interval-inputs output{font-size:18px}}
 @media(max-width:850px){.interval-edit-form{grid-template-columns:repeat(2,minmax(0,1fr))}.interval-absence-list{grid-template-columns:repeat(4,1fr)}.interval-admin .settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.interval-inputs{gap:15px}.dashboard-toggle .tab{min-width:0;padding:8px 12px}}
 @media(max-width:550px){#interval .panel{padding:16px}.interval-inputs{grid-template-columns:1fr;gap:10px}.interval-inputs small{min-height:0}.interval-legend{gap:8px;font-size:10px}.interval-chart{overflow-x:auto}.interval-chart svg{min-width:650px}.interval-absence-list{grid-template-columns:repeat(3,1fr)}.interval-summary strong{font-size:27px}}
+
+/* Readable interval comparison with a weekday control at the point of use. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+#interval .interval-current-text,.interval-tooltip dt.interval-current-text{color:#926817}
+#interval .interval-proposed-text{color:#16835e}
+#interval .interval-staffing-comparison{padding:28px 32px}
+.interval-staffing-comparison>.section-head{align-items:center;gap:20px}
+.interval-staffing-comparison .pill{font-size:12px;white-space:nowrap;background:#f5f7f2}
+.interval-comparison-toolbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 0;background:#fff;position:sticky;top:0;z-index:6;border-bottom:1px solid #e6eae1}
+.interval-weekdays{display:flex;flex-wrap:wrap;gap:6px;padding:5px;border:1px solid #dfe5db;background:#f5f7f3;border-radius:12px}
+.interval-weekdays button{border:0;border-radius:8px;background:transparent;padding:10px 18px;color:#52685e;font-size:12px;font-weight:600;min-width:92px}
+.interval-weekdays button.active{background:#0078d4;color:#fff;box-shadow:0 2px 6px #0078d426}
+.interval-weekdays button:hover:not(.active){background:#e8eee5;color:var(--ink)}
+.interval-gap-legend{display:flex;gap:20px;font-size:12px;color:var(--muted);white-space:nowrap}
+#intervalStaffingNote{color:var(--muted);margin:16px 0 20px;line-height:1.7}
+.interval-comparison-scroll{border:1px solid #e2e7dc;border-radius:12px}
+#interval .interval-comparison-table{width:100%;max-width:none;margin:0;font-variant-numeric:tabular-nums;font-size:14px;table-layout:fixed}
+#interval .interval-comparison-table th,#interval .interval-comparison-table td{padding:15px 24px;text-align:right;border-bottom:1px solid #e9ede5}
+#interval .interval-comparison-table th:first-child{width:28%;text-align:left}
+#interval .interval-comparison-table thead th{padding-top:18px;padding-bottom:18px;background:#f4f7f0;color:#52685e;font-size:12px;font-weight:700;white-space:normal}
+#interval .interval-comparison-table thead th small{display:block;margin-top:5px;font-size:10px;font-weight:400;color:#7b887c;line-height:1.5}
+#interval .interval-comparison-table tbody th{font-size:14px;font-weight:600;letter-spacing:.2px}
+#interval .interval-comparison-table td{font-size:17px}
+#interval .interval-comparison-table tbody tr:nth-child(even){background:#fafbf8}
+#interval .interval-comparison-table tbody tr:hover{background:#f1f5ec}
+#interval .interval-comparison-table tbody tr:last-child>*{border-bottom:0}
+.interval-time-divider{color:#9ca999;margin:0 10px;font-weight:400}
+.interval-current-number{color:#926817;font-weight:650}
+.interval-required-number{color:#0078d4;font-weight:650}
+.interval-gap-pill{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;min-width:124px;padding:7px 11px;border-radius:7px;font-size:15px;background:#eef1eb;color:#52685e}
+.interval-gap-pill b{font-weight:700}
+.interval-gap-pill small{font-size:10px;font-weight:500}
+.interval-gap-pill.short{background:#fff0ec;color:#ad4333}
+.interval-gap-pill.spare{background:#eaf5ee;color:#147751}
+@media(min-width:1600px){#interval .interval-staffing-comparison{padding:32px 40px}.interval-weekdays button{min-width:112px;padding:11px 24px}}
+@media(max-width:1050px){.interval-comparison-toolbar{flex-wrap:wrap;gap:12px}.interval-weekdays button{padding:9px 12px;min-width:80px}#interval .interval-comparison-table th,#interval .interval-comparison-table td{padding:13px 16px}.interval-gap-pill{min-width:108px}}
+@media(max-width:650px){#interval .interval-staffing-comparison{padding:18px 14px}.interval-staffing-comparison .pill{font-size:10px}.interval-comparison-toolbar{gap:10px;padding:12px 0}.interval-weekdays{width:100%;gap:2px;padding:4px}.interval-weekdays button{flex:1;min-width:0;padding:9px 3px;font-size:10px}.interval-gap-legend{gap:15px;font-size:10px}#intervalStaffingNote{font-size:11px;margin:12px 0 16px}#interval .interval-comparison-table{min-width:560px}#interval .interval-comparison-table th,#interval .interval-comparison-table td{padding:12px 14px}.interval-gap-pill{min-width:102px}.interval-time-divider{margin:0 6px}}
