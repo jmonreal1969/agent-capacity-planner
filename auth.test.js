@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';import {createHmac} from 'node:crypto';i
 process.env.CAPACITY_PIN='672941';process.env.CAPACITY_SUPERVISOR_PIN='Sup1';process.env.CAPACITY_SESSION_SECRET='test-only-signing-key-not-for-deployment';
 async function request(url='/',method='GET',body=undefined,extra={}){const req={url,method,body,headers:{host:'planner.test','x-vercel-forwarded-for':'192.0.2.1',...extra},socket:{remoteAddress:'192.0.2.1'}},res={statusCode:200,headers:{},setHeader(k,v){this.headers[k.toLowerCase()]=v;},end(v=''){this.body=String(v);}};await handler(req,res);return res;}
 let r=await request();assert.equal(r.statusCode,200);assert.match(r.body,/Access PIN/);assert.match(r.body,/every open or refresh/);assert.ok(!r.body.includes('SCENARIO BUILDER'));assert.match(r.headers['cache-control'],/no-store/);
-for(const path of ['/app.js','/style.css','/model.js','/campaign.js','/campaign-model.js','/README.md','/api/gate.js']){r=await request(path);assert.equal(r.statusCode,401);}
+for(const path of ['/app.js','/style.css','/model.js','/campaign.js','/campaign-model.js','/interval.js','/interval-model.js','/interval-data.js','/README.md','/api/gate.js']){r=await request(path);assert.equal(r.statusCode,401);}
 r=await request('/login','POST',{pin:'000000'});assert.equal(r.statusCode,401);assert.match(r.body,/not correct/);
 r=await request('/login','POST',{pin:'672941'},{origin:'https://evil.test'});assert.equal(r.statusCode,403);
 r=await request('/login','POST',{pin:'672941'},{origin:'https://planner.test'});assert.equal(r.statusCode,303);const cookie=r.headers['set-cookie'][0];assert.match(cookie,/HttpOnly/);assert.match(cookie,/Secure/);assert.match(cookie,/Max-Age=28800/);const session=cookie.split(';')[0],entry=r.headers['set-cookie'][1].split(';')[0],both=session+'; '+entry;
 r=await request('/','GET',undefined,{cookie:both});assert.match(r.body,/SCENARIO BUILDER/);assert.match(r.body,/action="\/logout"/);assert.match(r.headers['set-cookie'],/__Host-capacity_entry=;.*Max-Age=0/);
 r=await request('/app.js','GET',undefined,{cookie:session});assert.equal(r.statusCode,200);assert.match(r.headers['content-type'],/javascript/);
-for(const path of ['/campaign.js','/campaign-model.js']){r=await request(path,'GET',undefined,{cookie:session});assert.equal(r.statusCode,200);assert.match(r.headers['content-type'],/javascript/);}
+for(const path of ['/campaign.js','/campaign-model.js','/interval.js','/interval-model.js','/interval-data.js']){r=await request(path,'GET',undefined,{cookie:session});assert.equal(r.statusCode,200);assert.match(r.headers['content-type'],/javascript/);}
 r=await request('/','GET',undefined,{cookie:session});assert.match(r.body,/Access PIN/);assert.ok(r.headers['set-cookie'].some(c=>c.startsWith('__Host-capacity_session=;')&&c.includes('Max-Age=0')));
 r=await request('/index.html','GET',undefined,{cookie:session});assert.match(r.body,/Access PIN/);
 r=await request('/api/gate','GET',undefined,{cookie:both});assert.match(r.body,/Access PIN/);

@@ -47,3 +47,20 @@ Admin can use Menu > Create Supervisor link to share the current saved Agent con
 Supervisor mode loads settings only from the server-validated snapshot, ignores browser Admin storage, and never persists slider scenarios. Admin, backup/import, sharing, and demand-editing controls are removed/locked; numeric equivalents are read-only while scenario sliders and benchmarks remain usable. Supervisor requests to POST /supervisor-link receive 403 even if the interface is modified. Direct server-source paths stay blocked. All browser calculations can be inspected locally; users cannot edit the encrypted shared snapshot or the Admin's saved settings with Supervisor access.
 
 The separate PIN is a shared Supervisor credential, rather than individual employee accounts. Rotating it invalidates existing Supervisor sessions. No PIN or signing secret is embedded in client code, backup files, or Supervisor links.
+
+
+## Interval Planning (v4)
+
+The third view preserves the existing Agent and Campaign daily scenarios. Source data is seeded from Shifts.xlsx (119 agents, 51 domestic and 68 offshore) and Average_Calls_30min_Interval_HC.xlsx (24 Eastern half-hours, Monday through Friday). The interval source totals stay separate from daily dashboard demand.
+
+Domestic shifts are 510 minutes including 30 minutes lunch. Offshore shifts are 540 minutes including 60 minutes lunch. Both have two 15-minute breaks. Domestic non-phone time defaults to 110 minutes, including lunch, breaks, and 50 minutes wrap-up. Offshore receives an additional 30 lunch minutes; both retain 400 call minutes. Wrap-up is spread over the 450 minutes outside scheduled events and is deducted once.
+
+Unavailable headcount includes scheduled-off agents. Friday has 110 scheduled and 9 scheduled off; unavailable32 therefore means 23 additional absences and 87 present. Anonymous absences are distributed proportionally. Admin can select actual agent absences for the selected day. Changing weekdays clears named absence selections.
+
+Coverage uses minute overlap aggregated into half-hour active-agent equivalents. Required active agents use the existing stationary Erlang A model separately in each interval and meet all configured service, abandonment and answered-wait targets. There is no queue carryover and shortage hours are not hires.
+
+Admin can edit default AHT (4–6 minutes), domestic total non-phone time (60–150 minutes), unavailable headcount, queue targets/assumptions, all interval volumes, and individual shifts, working days and event times. Shift duration and non-overlapping event constraints are validated. These settings persist in browser storage. Proposed event times stay separate from the saved roster. Suggestions search one event move by up to one hour and must reduce shortage without worsening another interval. They do not establish global optimality.
+
+Interval scenarios reset to saved defaults on refresh, including cleared named absences/proposals. JSON backups include the Interval configuration and scenario; restore validates all supplied dashboards before applying. Older backups remain supported. New Supervisor links include Interval configuration (subject to the existing cookie size limit); old links use the seeded Interval defaults. Supervisors can adjust scenario sliders and weekday selection, but cannot edit schedules, demand, assumptions, named absences or saved settings. Their scenarios are never persisted.
+
+The three interval modules are PIN-protected and included in the Vercel function bundle. The new tests reconcile source totals, attendance accounting, per-agent productive minutes, partial breaks, minimal required staffing, suggestion safety and snapshot round trips.

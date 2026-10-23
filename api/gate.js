@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 const COOKIE='__Host-capacity_session',ATTEMPTS='__Host-capacity_attempts',ENTRY='__Host-capacity_entry',VIEW='__Host-capacity_view',LIFETIME=8*60*60,WINDOW=10*60*1000,MAX=5;
 const attempts=new Map();
-const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/model.js':'model.js','/campaign.js':'campaign.js','/campaign-model.js':'campaign-model.js','/style.css':'style.css'};
+const files={'/interval.js':'interval.js','/interval-model.js':'interval-model.js','/interval-data.js':'interval-data.js','/':'index.html','/index.html':'index.html','/app.js':'app.js','/model.js':'model.js','/campaign.js':'campaign.js','/campaign-model.js':'campaign-model.js','/style.css':'style.css'};
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 function key(){if(!/^\d{6}$/.test(process.env.CAPACITY_PIN||'')||!process.env.CAPACITY_SESSION_SECRET||process.env.CAPACITY_SESSION_SECRET.length<32)throw Error('Access configuration missing');return createHmac('sha256',process.env.CAPACITY_SESSION_SECRET).update(process.env.CAPACITY_PIN).digest();}
 function mac(value){return createHmac('sha256',key()).update(value).digest('base64url');}
