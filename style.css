@@ -529,10 +529,19 @@ body[data-dashboard="interval"] .intro{display:none}
 @media(max-width:900px){.interval-schedule-controls{flex-wrap:wrap}.interval-schedule-controls>label{min-width:180px}.interval-group-planner .section-head{align-items:flex-start}}
 @media(max-width:650px){.interval-schedule-controls{gap:12px}.interval-schedule-controls>label{width:100%}#interval .interval-comparison-table{min-width:720px}.interval-schedule-summary{font-size:11px;padding:11px 13px}}
 
-/* Keep lunch/break column labels visible while reviewing the schedule. */
-.interval-schedule-table{border-collapse:separate;border-spacing:0}
-.interval-schedule-table thead th{position:sticky;top:0;z-index:4;box-shadow:0 1px 0 #d5ddce;background:#f4f7f0}
-.interval-schedule-table thead th:first-child{border-top-left-radius:9px}
-.interval-schedule-table thead th:last-child{border-top-right-radius:9px}
-@media(min-width:1200px){.interval-schedule-scroll{overflow:visible}}
-@media(max-width:1199px){.interval-schedule-scroll{max-height:65vh;overflow:auto}}
+/* Explicit freeze controls use the same scroll container at every viewport size. */
+.interval-freeze-bar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:14px 0 10px}
+#interval .interval-freeze-bar p{margin:0;font-size:11px;line-height:1.6;color:var(--muted)}
+.interval-freeze-choice{display:flex;align-items:center;gap:3px;border:1px solid #d4ddce;border-radius:9px;padding:4px;background:#f5f7f2;flex-shrink:0}
+.interval-freeze-choice>span{font-size:11px;font-weight:600;padding:0 9px;color:var(--ink)}
+.interval-freeze-choice button{background:transparent;border:0;border-radius:6px;padding:7px 13px;min-width:45px;font-size:12px;font-weight:600;color:#52685e}
+.interval-freeze-choice button.active{background:#0078d4;color:white;box-shadow:0 1px 4px #0078d426}
+.interval-freeze-table{position:relative;isolation:isolate;overflow:auto!important;scrollbar-gutter:stable;scroll-padding-top:85px}
+.interval-freeze-table[data-freeze="true"]{max-height:clamp(240px,62vh,700px)}
+.interval-freeze-table[data-freeze="false"]{max-height:none}
+.interval-freeze-table>table{border-collapse:separate;border-spacing:0}
+.interval-freeze-table[data-freeze="true"]>table>thead>tr>th{position:sticky;top:0;z-index:3;background:#f4f7f0;box-shadow:0 1px 0 #cfd9c7}
+.interval-freeze-table[data-freeze="false"]>table>thead>tr>th{position:static;box-shadow:none}
+.interval-freeze-table .interval-schedule-count{scroll-margin-top:85px}
+@media(max-width:650px){.interval-freeze-bar{align-items:flex-start;gap:10px}#interval .interval-freeze-bar p{font-size:10px}.interval-freeze-choice>span{padding:0 5px}.interval-freeze-choice button{padding:6px 9px;min-width:37px}}
+@media print{.interval-freeze-bar{display:none}.interval-freeze-table[data-freeze="true"]{max-height:none;overflow:visible!important}.interval-freeze-table[data-freeze="true"]>table>thead>tr>th{position:static}}
