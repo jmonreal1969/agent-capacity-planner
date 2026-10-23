@@ -528,3 +528,11 @@ body[data-dashboard="interval"] .intro{display:none}
 .interval-group-planner button:disabled{opacity:.55;cursor:wait}
 @media(max-width:900px){.interval-schedule-controls{flex-wrap:wrap}.interval-schedule-controls>label{min-width:180px}.interval-group-planner .section-head{align-items:flex-start}}
 @media(max-width:650px){.interval-schedule-controls{gap:12px}.interval-schedule-controls>label{width:100%}#interval .interval-comparison-table{min-width:720px}.interval-schedule-summary{font-size:11px;padding:11px 13px}}
+
+/* Keep lunch/break column labels visible while reviewing the schedule. */
+.interval-schedule-table{border-collapse:separate;border-spacing:0}
+.interval-schedule-table thead th{position:sticky;top:0;z-index:4;box-shadow:0 1px 0 #d5ddce;background:#f4f7f0}
+.interval-schedule-table thead th:first-child{border-top-left-radius:9px}
+.interval-schedule-table thead th:last-child{border-top-right-radius:9px}
+@media(min-width:1200px){.interval-schedule-scroll{overflow:visible}}
+@media(max-width:1199px){.interval-schedule-scroll{max-height:65vh;overflow:auto}}
