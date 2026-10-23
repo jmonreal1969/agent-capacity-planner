@@ -59,8 +59,21 @@ Unavailable headcount includes scheduled-off agents. Friday has 110 scheduled an
 
 Coverage uses minute overlap aggregated into half-hour active-agent equivalents. Required active agents use the existing stationary Erlang A model separately in each interval and meet all configured service, abandonment and answered-wait targets. There is no queue carryover and shortage hours are not hires.
 
-Admin can edit default AHT (4–6 minutes), domestic total non-phone time (60–150 minutes), unavailable headcount, queue targets/assumptions, all interval volumes, and individual shifts, working days and event times. Shift duration and non-overlapping event constraints are validated. These settings persist in browser storage. Proposed event times stay separate from the saved roster. Suggestions search one event move by up to one hour and must reduce shortage without worsening another interval. They do not establish global optimality.
+Admin can edit default AHT (4–6 minutes), domestic total non-phone time (60–150 minutes), unavailable headcount, queue targets/assumptions, all interval volumes, and individual shifts, working days and event times. Shift duration and non-overlapping event constraints are validated. These settings persist in browser storage. Proposed event times stay separate from the saved roster. The group planner below replaces the earlier single-event suggestion interface and can optimize many actual assignments for a selected weekday.
 
 Interval scenarios reset to saved defaults on refresh, including cleared named absences/proposals. JSON backups include the Interval configuration and scenario; restore validates all supplied dashboards before applying. Older backups remain supported. New Supervisor links include Interval configuration (subject to the existing cookie size limit); old links use the seeded Interval defaults. Supervisors can adjust scenario sliders and weekday selection, but cannot edit schedules, demand, assumptions, named absences or saved settings. Their scenarios are never persisted.
 
 The three interval modules are PIN-protected and included in the Vercel function bundle. The new tests reconcile source totals, attendance accounting, per-agent productive minutes, partial breaks, minimal required staffing, suggestion safety and snapshot round trips.
+
+
+## Group lunch and break planner
+
+The group planner replaces the single-agent scenario form. Each half-hour shows current event starts, editable proposed lunch/break starts, current and proposed average on-event headcount, and coverage change. Counts are actual scheduled event starts; average coverage accounts for event overlap and estimated attendance. Unknown absences remain proportionally distributed. Named absences exclude the affected agents from planning.
+
+Each count edit reassigns actual agent events, preserves all daily event durations and shifts, respects original event order and prevents overlap. Events can move by a selected 15–120 minutes from the original starts (60 minutes initially). Infeasible counts fail atomically. Decreasing starts relocates events rather than deleting them. The agent assignment table makes every change reviewable.
+
+Optimize this weekday performs deterministic coordinate descent over valid single-event moves, first reducing total shortage hours, then squared interval deficits to balance shortages. The search stops at a local optimum or after 1,000 moves. It is not a global optimum guarantee and can redistribute an individual interval shortage when the overall objective improves. No extra agents or productive minutes are created. Wrap-up allowance stays fixed. When all busy periods are understaffed, total shortage hours may remain unchanged while peak gaps improve.
+
+Weekday-specific proposals are stored in dayProposals, with backward-compatible fallback to legacy proposed plans. Backups validate and restore both formats. Editing/optimization automatically selects the proposed view, updating the graph, top gap summaries and the comparison table; that table retains current coverage and adds proposed HC. Its gap toggle chooses the comparison baseline. The existing PIN, Supervisor restrictions, and separate Agent/Campaign daily models remain unchanged.
+
+New group-planner event moves start at least 60 minutes after shift start and finish at least 15 minutes before shift end. These practical timing limits are shown beside the table. Saved source schedules are preserved. Narrowing the movement window resets the selected weekday proposal if existing times exceed the new limit.

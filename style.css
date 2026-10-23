@@ -501,3 +501,30 @@ body[data-dashboard="interval"] .intro{display:none}
 @media(min-width:1600px){#interval .interval-staffing-comparison{padding:32px 40px}.interval-weekdays button{min-width:112px;padding:11px 24px}}
 @media(max-width:1050px){.interval-comparison-toolbar{flex-wrap:wrap;gap:12px}.interval-weekdays button{padding:9px 12px;min-width:80px}#interval .interval-comparison-table th,#interval .interval-comparison-table td{padding:13px 16px}.interval-gap-pill{min-width:108px}}
 @media(max-width:650px){#interval .interval-staffing-comparison{padding:18px 14px}.interval-staffing-comparison .pill{font-size:10px}.interval-comparison-toolbar{gap:10px;padding:12px 0}.interval-weekdays{width:100%;gap:2px;padding:4px}.interval-weekdays button{flex:1;min-width:0;padding:9px 3px;font-size:10px}.interval-gap-legend{gap:15px;font-size:10px}#intervalStaffingNote{font-size:11px;margin:12px 0 16px}#interval .interval-comparison-table{min-width:560px}#interval .interval-comparison-table th,#interval .interval-comparison-table td{padding:12px 14px}.interval-gap-pill{min-width:102px}.interval-time-divider{margin:0 6px}}
+
+/* Group lunch and break allocation: event counts backed by agent schedules. */
+.interval-schedule-controls{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:18px 0}
+.interval-schedule-controls>label{font-size:11px;color:var(--muted);min-width:170px}
+.interval-schedule-controls small{display:block;font-size:10px;margin-top:4px}
+.interval-schedule-summary{background:#f4f7f0;border:1px solid #e2e7dc;border-radius:9px;padding:13px 16px;font-size:12px;line-height:1.8;color:var(--ink)}
+#intervalScheduleMessage{min-height:30px;padding:10px 0;color:#52685e}
+.interval-schedule-scroll{border:1px solid #e2e7dc;border-radius:10px}
+.interval-schedule-table{margin:0;min-width:1030px;font-variant-numeric:tabular-nums}
+.interval-schedule-table thead th{padding:16px 13px;background:#f4f7f0;color:#52685e;font-size:11px;text-align:right;white-space:normal}
+.interval-schedule-table thead th:first-child{text-align:left}
+.interval-schedule-table th small{display:block;margin-top:5px;font-size:9px;font-weight:400;color:var(--muted)}
+.interval-schedule-table td,.interval-schedule-table tbody th{padding:12px 13px;text-align:right;font-size:13px;white-space:nowrap}
+.interval-schedule-table tbody th{text-align:left;font-weight:600}
+.interval-schedule-table tbody tr:nth-child(even){background:#fafbf8}
+.interval-schedule-table tbody tr:hover{background:#f1f5ec}
+.interval-schedule-table .interval-schedule-count{width:76px;min-width:0;display:inline-block;text-align:center;background:#fff;border:1px solid #b8cbb4;padding:8px;border-radius:7px;font-weight:650;color:var(--ink);font-size:14px}
+.interval-event-count{display:inline-block;font-size:10px;border:1px solid #e2e7dc;border-radius:5px;padding:3px 6px;margin-left:4px;color:#52685e;background:#fff}
+.interval-plan-arrow{color:#89978b;margin:0 5px}
+.interval-assignment-table{min-width:650px;font-size:12px;font-variant-numeric:tabular-nums}
+.interval-assignment-table td,.interval-assignment-table th{padding:12px;white-space:nowrap}
+.interval-proposed-number{color:#147751;font-weight:650}
+#interval .interval-comparison-table th:first-child{width:23%}
+.interval-comparison-toolbar{flex-wrap:wrap}
+.interval-group-planner button:disabled{opacity:.55;cursor:wait}
+@media(max-width:900px){.interval-schedule-controls{flex-wrap:wrap}.interval-schedule-controls>label{min-width:180px}.interval-group-planner .section-head{align-items:flex-start}}
+@media(max-width:650px){.interval-schedule-controls{gap:12px}.interval-schedule-controls>label{width:100%}#interval .interval-comparison-table{min-width:720px}.interval-schedule-summary{font-size:11px;padding:11px 13px}}

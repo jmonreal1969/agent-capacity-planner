@@ -6,6 +6,7 @@ import {queueStats} from './campaign-model.js';
 import {sealSettings,openSettings,validateSharedSettings} from './auth-access.js';
 import {defaults} from './model.js';
 import {campaignDefaults} from './campaign-model.js';
+import {proposalFor,scheduleStarts,scheduleChanges,optimizeSchedule,setScheduleStartCount} from './interval-model.js';
 test('119 source shifts reconcile and working days differ correctly',()=>{
  assert.equal(sourceRoster.length,119);assert.equal(sourceRoster.filter(r=>r[6]===30).length,51);sourceRoster.forEach(validateRoster);
  assert.deepEqual([0,1,2,3,4].map(day=>coverage({...intervalInitial(),day}).scheduled),[119,119,116,111,110]);
@@ -43,4 +44,29 @@ test('Supervisor snapshots preserve interval settings and remain within cookie l
  const interval=structuredClone(intervalDefaults);interval.roster[0]=structuredClone(sourceRoster[0]);interval.roster[0][5]=840;interval.calls['0:0']=50;
  const settings=validateSharedSettings({version:1,agent:defaults,campaign:campaignDefaults,interval});const secret='interval-test-secret';const token=sealSettings(settings,secret);assert.ok(token.length<3400);assert.deepEqual(openSettings(token,secret).interval,interval);
  assert.equal(openSettings(token+'x',secret),null);
+});
+test('group count edit relocates actual events, preserves daily time, and is weekday-specific',()=>{
+ const s={...intervalInitial(),day:0,unavailable:0},original=JSON.stringify(s),starts=scheduleStarts(s),bin=12,target=starts[bin].lunch-1;
+ assert.ok(target>=0);const result=setScheduleStartCount(s,bin,'lunch',target),next=result.state,after=scheduleStarts(next);
+ assert.equal(after[bin].lunch,target);assert.equal(starts.reduce((n,r)=>n+r.lunch,0),after.reduce((n,r)=>n+r.lunch,0));assert.equal(starts.reduce((n,r)=>n+r.breaks,0),after.reduce((n,r)=>n+r.breaks,0));assert.equal(JSON.stringify(s),original);
+ const beforeCoverage=coverage(s,'current'),planned=coverage(next,'proposed');assert.ok(Math.abs(beforeCoverage.rows.reduce((n,r)=>n+r.available*30,0)-planned.rows.reduce((n,r)=>n+r.available*30,0))<1e-6);
+ for(const c of scheduleChanges(next)){assert.equal(c.after.length,3);c.after.forEach((t,j)=>assert.ok(Math.abs(t-c.before[j])<=60));const r=structuredClone(sourceRoster[c.agent]);[r[4],r[5],r[7]]=c.after;validateRoster(r);}
+ assert.deepEqual(coverage({...next,day:1},'proposed').rows,coverage({...next,day:1},'current').rows);assert.deepEqual(validateIntervalState(JSON.parse(JSON.stringify(next))),next);
+ assert.equal(coverage(next,'proposed').present,119);assert.equal(next.acw,s.acw);
+});
+test('infeasible group counts fail atomically; named absences are excluded from assignments',()=>{
+ const s={...intervalInitial(),day:4,exact:true,absent:[0,1]},original=JSON.stringify(s);assert.throws(()=>setScheduleStartCount(s,0,'lunch',119),/No changes were applied/);assert.equal(JSON.stringify(s),original);assert.throws(()=>setScheduleStartCount(s,0,'lunch',1.5));
+ const total=scheduleStarts(s).reduce((n,r)=>n+r.lunch,0);assert.equal(total,108);
+ const optimized=optimizeSchedule(s,10).state;assert.ok(!scheduleChanges(optimized).some(c=>s.absent.includes(c.agent)));assert.equal(scheduleStarts(optimized).reduce((n,r)=>n+r.lunch,0),total);
+});
+test('whole-day optimization does not worsen total shortage, balances gaps and preserves agent allowances',()=>{
+ const s={...intervalInitial(),day:4},before=coverage(s,'proposed'),out=optimizeSchedule(s),after=coverage(out.state,'proposed');
+ assert.ok(out.moves>0);assert.ok(shortageHours(after.rows)<=shortageHours(before.rows)+1e-6);
+ const squared=rows=>rows.reduce((n,r)=>n+Math.max(0,-r.gap)**2,0);assert.ok(squared(after.rows)<squared(before.rows));
+ assert.ok(Math.abs(before.rows.reduce((n,r)=>n+r.available,0)-after.rows.reduce((n,r)=>n+r.available,0))<1e-6);assert.ok(Math.abs(before.rows.reduce((n,r)=>n+r.wrap,0)-after.rows.reduce((n,r)=>n+r.wrap,0))<1e-6);
+ const a=scheduleStarts(s),b=scheduleStarts(out.state);for(const key of ['lunch','breaks'])assert.equal(a.reduce((n,r)=>n+r[key],0),b.reduce((n,r)=>n+r[key],0));
+ for(const c of scheduleChanges(out.state))c.after.forEach((t,j)=>{if(t!==c.before[j]){assert.ok(t>=c.shift[0]+60);assert.ok(t+(j===1?c.lunchDuration:15)<=c.shift[1]-15);}});
+ const ended=optimizeSchedule(out.state,2);if(out.converged)assert.equal(ended.moves,0);
+ const zero={...intervalInitial(),unavailable:119,day:0};assert.equal(optimizeSchedule(zero).moves,0);
+ assert.throws(()=>validateIntervalState({...s,dayProposals:{9:{}}}));assert.throws(()=>validateIntervalState({...s,moveWindow:7}));
 });
