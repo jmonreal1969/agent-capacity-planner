@@ -431,6 +431,19 @@ body[data-dashboard="interval"] .intro{display:none}
 .interval-legend{display:flex;flex-wrap:wrap;gap:15px;font-size:11px;color:var(--muted)}
 .interval-chart svg{display:block;width:100%;height:auto;min-height:180px;max-height:300px}
 .interval-chart text{font-family:inherit;font-size:11px;fill:#6e7d76}
+.interval-chart{position:relative}
+.interval-hit{cursor:crosshair;outline:none}
+.interval-hit:hover,.interval-hit:focus{fill:#0078d40c;stroke:#0078d4;stroke-width:.6}
+.interval-tooltip{position:absolute;z-index:5;min-width:225px;padding:12px 15px;border:1px solid var(--line);border-radius:9px;background:#fff;box-shadow:0 5px 22px #163b3726;pointer-events:none;font-size:12px;color:var(--ink)}
+.interval-tooltip strong{display:block;font-size:13px;margin-bottom:7px}
+.interval-tooltip dl{margin:0;display:grid;gap:5px}
+.interval-tooltip dl>div{display:flex;gap:20px;justify-content:space-between}
+.interval-tooltip dt{color:var(--muted)}
+.interval-tooltip dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.interval-tooltip dd.interval-negative,.interval-tooltip dd.interval-positive{background:none}
+.interval-comparison-table{max-width:900px;margin-left:auto;margin-right:auto}
+.interval-comparison-table tbody tr:nth-child(even){background:#f8faf6}
+.interval-comparison-table th,.interval-comparison-table td{padding:9px 16px}
 #interval details>summary,.interval-admin details>summary{cursor:pointer;font-size:12px;font-weight:600;padding:10px 0}
 .interval-table{font-variant-numeric:tabular-nums;margin-top:8px}
 .interval-table td,.interval-table th{text-align:right;white-space:nowrap;padding:7px 10px}
